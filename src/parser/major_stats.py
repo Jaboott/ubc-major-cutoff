@@ -1,15 +1,22 @@
 class MajorStats:
-    def __init__(self, name, id, type, year, space, max_grade, min_grade, initial_admit, final_admit):
-        self.year = self
+    def __init__(self, name, id, type, year, max_grade, min_grade, initial_reject, final_admit):
         self.name = name
         self.id = id
         self.type = type
         self.year = year
-        self.space = space
         self.max_grade = max_grade
         self.min_grade = min_grade
-        self.initial_admit = initial_admit
+        self.initial_reject = initial_reject
         self.final_admit = final_admit
 
     def __str__(self):
-        print()
+        return (f"Major Name: {self.name}\n"
+                f"Major ID: {self.id}\n"
+                f"Major Type: {self.type}\n"
+                f"Year: {self.year}\n"
+                f"Max Grade: {self.max_grade}\n"
+                f"Min Grade: {self.min_grade}\n"
+                f"Initial Reject: {self.initial_reject}\n"
+                f"Final Admit: {self.final_admit}\n"
+                f"----------------------------------------")
+

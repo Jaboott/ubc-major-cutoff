@@ -1,9 +1,8 @@
 CREATE TABLE AdmissionStatus (
     Year INT,
-    Space INT,
     MaxGrade DOUBLE,
     MinGrade DOUBLE,
-    InitialAdmit INT,
+    InitialReject INT,
     FinalAdmit INT,
     ID INT,
     FOREIGN KEY (ID) REFERENCES Major(ID),
