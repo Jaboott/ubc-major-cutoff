@@ -1,0 +1,12 @@
+{
+  "columns_mapping": {
+    "name": 2,
+    "type": 2,
+    "id": 2,
+    "year": 0,
+    "max_grade": 7,
+    "min_grade": 8,
+    "initial_reject": 5,
+    "final_admit": 6
+  }
+}
