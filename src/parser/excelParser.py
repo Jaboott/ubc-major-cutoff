@@ -1,4 +1,5 @@
 import json
+import logging
 
 from dotenv import load_dotenv
 
@@ -11,30 +12,19 @@ from src.parser.major_stats import MajorStats
 load_dotenv()
 
 
-def read_document():
-    # make this into either config.json or env variable
-    url = os.getenv('DOCUMENT_URL')
-
-    try:
-        df = pd.read_csv(url)
-        return df
-    except FileNotFoundError:
-        print('File not found')
-
-    return None
-
-
 def load_config():
-    path = "src/parser/config.json"
+    config_path = "src/parser/config.json"
+    if not os.path.exists(config_path):
+        raise FileNotFoundError(f"Config file not found at {config_path}")
 
     try:
-        with open(path, "r") as file:
+        with open(config_path, "r") as file:
             config = json.load(file)
             return config
-    except FileNotFoundError:
-        raise ValueError("Configuration file not found at 'src/parser/config.json'.")
-    except:
-        raise ValueError("Configuration file is not a valid JSON.")
+    except FileNotFoundError as e:
+        logging.error(f"FileNotFoundError: {e}")
+    except Exception as e:
+        logging.error(e)
 
 
 def get_major_id(data):
@@ -119,16 +109,3 @@ def build_major_stats(data):
     major_stats = MajorStats(name, id, type, year, max_grade, min_grade, initial_reject, final_admit)
 
     return major_stats
-
-
-if __name__ == '__main__':
-    df = read_document()
-    print(df.head())
-
-    data = []
-
-    for i in range(df.shape[0]):
-        major_stats = build_major_stats(df.iloc[i])
-        if major_stats is not None:
-            print(major_stats)
-            data.append(major_stats)
