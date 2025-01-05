@@ -1,3 +1,5 @@
+import logging
+
 from dotenv import load_dotenv
 
 import psycopg2
@@ -26,8 +28,21 @@ def get_connection():
     return connection
 
 
-def close_connection(connection):
-    if connection:
+def execute_query(query, params=None):
+    try:
+        connection = get_connection()
+
+        with connection.cursor() as cursor:
+            cursor.execute(query, params or ())
+            connection.commit()
+
+            if cursor.description:
+                return cursor.fetchall()
+
+            return []
+    except Exception as e:
+        raise Exception(f"Error executing query: {e}")
+    finally:
         connection.close()
 
 
