@@ -1,10 +1,10 @@
 -- uncomment for initial db setup --
--- CREATE TYPE major_type AS ENUM('Combined', 'Honours', 'Major');
+-- CREATE TYPE major_type AS ENUM('Major', 'Combined Major', 'Honours', 'Combined Honours');
 
 CREATE TABLE IF NOT EXISTS majors (
     name VARCHAR(255),
     id INT NOT NULL,
-    type  major_type NOT NULL,
+    type major_type NOT NULL,
     PRIMARY KEY (id, type)
 );
 
