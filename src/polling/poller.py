@@ -55,40 +55,59 @@ def has_checksum_changed(data):
     return False
 
 
-# TODO complete the db stuff
+# TODO might still have bugs
 def handle_change(data):
     new_checksum = create_checksum(data)
+    dt = datetime.now()
+    try:
+        execute_query("INSERT INTO meta_data (check_sum, last_updated) VALUES(%s, %s);", (new_checksum, dt))
+        execute_query("DROP TABLE IF EXISTS admission_statistics, majors;")
 
-    # re-populating the db with the new data
-    for i in range(data.shape[0]):
-        major_stats = build_major_stats(data.iloc[i])
-        if major_stats is not None:
-            print(major_stats)
+        init_tables()
 
-    return
+        # re-populating the db with the new data
+        for index, row in data.iterrows():
+            major_stats = build_major_stats(row)
+
+            if major_stats is None:
+                continue
+
+            try:
+                execute_query("INSERT INTO majors VALUES (%s, %s, %s) ON CONFLICT DO NOTHING;",
+                              (major_stats.name, major_stats.id, major_stats.type))
+                execute_query(
+                    "INSERT INTO admission_statistics VALUES (%s, %s, %s, %s, %s, %s, %s) ON CONFLICT DO NOTHING;",
+                    (major_stats.year, major_stats.max_grade, major_stats.min_grade, major_stats.initial_reject,
+                     major_stats.final_admit, major_stats.id, major_stats.type))
+            except Exception as e:
+                print(major_stats)
+                raise Exception("Failed to insert major_stats into db " + str(e))
+
+    except Exception as e:
+        logging.error(e)
 
 
-def start_db():
+def init_tables():
     try:
         schema_path = "src/db/schema.sql"
         if not os.path.exists(schema_path):
             raise FileNotFoundError(f"Schema file not found at {schema_path}")
 
         with open(schema_path, "r") as file:
-            init_tables = file.read()
-            execute_query(init_tables)
+            tables_schema = file.read()
+            execute_query(tables_schema)
     except Exception as e:
         logging.error(e)
 
 
-# TODO
+# TODO verify num of rows
 def poll():
     data = read_document()
 
-    start_db()
-    print("db started")
+    init_tables()
+    print("DB has started")
     if has_checksum_changed(data):
-        print("checksum changed")
+        print("checksum have changed")
         handle_change(data)
 
 
