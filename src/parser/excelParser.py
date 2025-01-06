@@ -78,6 +78,13 @@ def get_major_type(data):
         return None
 
 
+def convert_nan_to_none(value):
+    if pd.isna(value):
+        return None
+
+    return value
+
+
 def build_major_stats(data):
     # loading columns mapping and validating keys
     try:
@@ -96,14 +103,14 @@ def build_major_stats(data):
     name = get_major_name(data.iloc[columns["name"]])
     id = get_major_id(data.iloc[columns["id"]])
     type = get_major_type(data.iloc[columns["type"]])
-    year = data.iloc[columns["year"]]
-    max_grade = data.iloc[columns["max_grade"]]
-    min_grade = data.iloc[columns["min_grade"]]
-    initial_reject = data.iloc[columns["initial_reject"]]
-    final_admit = data.iloc[columns["final_admit"]]
+    year = convert_nan_to_none(data.iloc[columns["year"]])
+    max_grade = convert_nan_to_none(data.iloc[columns["max_grade"]])
+    min_grade = convert_nan_to_none(data.iloc[columns["min_grade"]])
+    initial_reject = convert_nan_to_none(data.iloc[columns["initial_reject"]])
+    final_admit = convert_nan_to_none(data.iloc[columns["final_admit"]])
 
     # indicating empty row if major_name is missing
-    if name is None:
+    if name is None or id is None:
         return None
 
     major_stats = MajorStats(name, id, type, year, max_grade, min_grade, initial_reject, final_admit)
