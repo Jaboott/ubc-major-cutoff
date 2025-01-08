@@ -8,7 +8,7 @@ import hashlib
 import time
 import logging
 
-from src.db.connection import get_connection, execute_query
+from src.db.connection import execute_query
 from src.parser.excelParser import build_major_stats
 
 load_dotenv()
@@ -59,6 +59,7 @@ def has_checksum_changed(data):
 def handle_change(data):
     new_checksum = create_checksum(data)
     dt = datetime.now()
+
     try:
         execute_query("INSERT INTO meta_data (check_sum, last_updated) VALUES(%s, %s);", (new_checksum, dt))
         execute_query("DROP TABLE IF EXISTS admission_statistics, majors;")
