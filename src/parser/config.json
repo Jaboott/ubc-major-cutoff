@@ -7,6 +7,7 @@
     "max_grade": 7,
     "min_grade": 8,
     "initial_reject": 5,
-    "final_admit": 6
+    "final_admit": 6,
+    "option": 1
   }
 }

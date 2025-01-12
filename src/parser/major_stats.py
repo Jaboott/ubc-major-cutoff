@@ -1,5 +1,5 @@
 class MajorStats:
-    def __init__(self, name, id, type, year, max_grade, min_grade, initial_reject, final_admit):
+    def __init__(self, name, id, type, year, max_grade, min_grade, initial_reject, final_admit, domestic):
         self.name = name
         self.id = id
         self.type = type
@@ -8,6 +8,7 @@ class MajorStats:
         self.min_grade = min_grade
         self.initial_reject = initial_reject
         self.final_admit = final_admit
+        self.domestic = domestic
 
     def __str__(self):
         return (f"Major Name: {self.name}\n"
@@ -18,5 +19,6 @@ class MajorStats:
                 f"Min Grade: {self.min_grade}\n"
                 f"Initial Reject: {self.initial_reject}\n"
                 f"Final Admit: {self.final_admit}\n"
+                f"Domestic: {self.domestic}"
                 f"----------------------------------------")
 

@@ -8,7 +8,7 @@ import hashlib
 import time
 import logging
 
-from src.db.connection import execute_query, close_all_connections
+from src.db.connection import execute_query, close_all_connections, start_connection
 from src.parser.excelParser import build_major_stats
 
 load_dotenv()
@@ -57,6 +57,7 @@ def has_checksum_changed(data):
 def handle_change(data):
     new_checksum = create_checksum(data)
     dt = datetime.now()
+    print("Re-populating db")
 
     try:
         # update the checksum in meta_data
@@ -75,14 +76,17 @@ def handle_change(data):
                 execute_query("INSERT INTO majors VALUES (%s, %s, %s) ON CONFLICT DO NOTHING;",
                               (major_stats.name, major_stats.id, major_stats.type))
                 execute_query(
-                    "INSERT INTO admission_statistics VALUES (%s, %s, %s, %s, %s, %s) ON CONFLICT DO NOTHING;",
+                    "INSERT INTO admission_statistics VALUES (%s, %s, %s, %s, %s, %s, %s) ON CONFLICT DO NOTHING;",
                     (major_stats.year, major_stats.max_grade, major_stats.min_grade, major_stats.initial_reject,
-                     major_stats.final_admit, major_stats.id))
+                     major_stats.final_admit, major_stats.id, major_stats.domestic))
             except Exception as e:
                 print(major_stats)
                 raise Exception("Failed to insert major_stats into db " + str(e))
+
+        print("Successfully populated db")
     except Exception as e:
         execute_query("UPDATE meta_data SET success = %s WHERE check_sum = %s", (False, new_checksum))
+        print("Failed to populate db")
         logging.error(e)
 
 
@@ -107,21 +111,17 @@ def init_tables():
 
 # TODO verify num of rows
 def poll():
-    data = read_document()
-
-    init_tables()
-    print("DB has started")
-    if has_checksum_changed(data):
-        print("checksum have changed")
-        handle_change(data)
-
-    close_all_connections()
-
-
-if __name__ == '__main__':
-    # Computing time
-    while True:
+    try:
         start_time = time.time()
-        poll()
-        print("--- %s seconds ---" % (time.time() - start_time))
-        time.sleep(5)
+        data = read_document()
+        start_connection()
+        init_tables()
+        print("DB has started")
+        if has_checksum_changed(data):
+            print("Checksum have changed")
+            handle_change(data)
+        print("Time to populate db: " + str(time.time() - start_time))
+    except Exception as e:
+        logging.error(e)
+    finally:
+        close_all_connections()

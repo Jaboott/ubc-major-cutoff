@@ -15,14 +15,15 @@ CREATE TABLE IF NOT EXISTS admission_statistics (
     initial_reject INT,
     final_admit INT,
     id INT,
+    domestic BOOLEAN,
     FOREIGN KEY (id) REFERENCES majors(id) ON DELETE CASCADE,
-    PRIMARY KEY (year, id)
+    PRIMARY KEY (year, id, domestic)
 );
 
 CREATE TABLE IF NOT EXISTS meta_data (
     id SERIAL,
     check_sum VARCHAR(64),
-    success Boolean,
+    success BOOLEAN,
     last_updated TIMESTAMP,
     PRIMARY KEY (id)
 );

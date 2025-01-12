@@ -78,6 +78,20 @@ def get_major_type(data):
         return None
 
 
+def is_domestic(data):
+    if pd.isna(data):
+        return None
+
+    # regex to see if string include "Excluding ... Domestic"
+    pattern = r'\bExcluding\b.*\bDomestic\b'
+    match = re.search(pattern, data)
+
+    if match:
+        return False
+
+    return True
+
+
 def convert_nan_to_none(value):
     if pd.isna(value):
         return None
@@ -91,7 +105,7 @@ def build_major_stats(data):
         config = load_config()
         columns = config.get("columns_mapping", {})
 
-        required_keys = ["name", "id", "type", "year", "max_grade", "min_grade", "initial_reject", "final_admit"]
+        required_keys = ["name", "id", "type", "year", "max_grade", "min_grade", "initial_reject", "final_admit", "option"]
 
         for key in required_keys:
             if key not in columns:
@@ -108,11 +122,12 @@ def build_major_stats(data):
     min_grade = convert_nan_to_none(data.iloc[columns["min_grade"]])
     initial_reject = convert_nan_to_none(data.iloc[columns["initial_reject"]])
     final_admit = convert_nan_to_none(data.iloc[columns["final_admit"]])
+    domestic = is_domestic(data.iloc[columns["option"]])
 
     # indicating empty row if major_name is missing
     if name is None or id is None:
         return None
 
-    major_stats = MajorStats(name, id, type, year, max_grade, min_grade, initial_reject, final_admit)
+    major_stats = MajorStats(name, id, type, year, max_grade, min_grade, initial_reject, final_admit, domestic)
 
     return major_stats
