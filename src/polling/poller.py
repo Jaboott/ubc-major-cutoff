@@ -8,7 +8,7 @@ import hashlib
 import time
 import logging
 
-from src.db.connection import execute_query
+from src.db.connection import execute_query, close_all_connections
 from src.parser.excelParser import build_major_stats
 
 load_dotenv()
@@ -39,10 +39,8 @@ def has_checksum_changed(data):
         result = execute_query("SELECT COUNT(*) FROM meta_data;")
         checksum = create_checksum(data)
 
-        # initial setup of checksum
+        # returns true if table is empty
         if result[0][0] == 0:
-            dt = datetime.now()
-            execute_query("INSERT INTO meta_data (check_sum, last_updated) VALUES(%s, %s);", (checksum, dt))
             return True
 
         old_checksum = execute_query("SELECT check_sum FROM meta_data ORDER BY last_updated DESC LIMIT 1;")
@@ -61,9 +59,9 @@ def handle_change(data):
     dt = datetime.now()
 
     try:
-        execute_query("INSERT INTO meta_data (check_sum, last_updated) VALUES(%s, %s);", (new_checksum, dt))
+        # update the checksum in meta_data
+        execute_query("INSERT INTO meta_data (check_sum, last_updated, success) VALUES(%s, %s, %s);", (new_checksum, dt, True))
         execute_query("DROP TABLE IF EXISTS admission_statistics, majors;")
-
         init_tables()
 
         # re-populating the db with the new data
@@ -83,13 +81,19 @@ def handle_change(data):
             except Exception as e:
                 print(major_stats)
                 raise Exception("Failed to insert major_stats into db " + str(e))
-
     except Exception as e:
+        execute_query("UPDATE meta_data SET success = %s WHERE check_sum = %s", (False, new_checksum))
         logging.error(e)
 
 
 def init_tables():
     try:
+        num_tables = execute_query("SELECT COUNT(*) FROM information_schema.tables WHERE table_schema = 'public';")
+        # Create major_type if initial db setup
+        if num_tables[0][0] == 0:
+            print("Initial db setup")
+            execute_query("CREATE TYPE major_type AS ENUM('Major', 'Combined Major', 'Honours', 'Combined Honours');")
+
         schema_path = "src/db/schema.sql"
         if not os.path.exists(schema_path):
             raise FileNotFoundError(f"Schema file not found at {schema_path}")
@@ -98,7 +102,7 @@ def init_tables():
             tables_schema = file.read()
             execute_query(tables_schema)
     except Exception as e:
-        logging.error(e)
+        logging.error("Failed to initialize tables " + str(e))
 
 
 # TODO verify num of rows
@@ -110,6 +114,8 @@ def poll():
     if has_checksum_changed(data):
         print("checksum have changed")
         handle_change(data)
+
+    close_all_connections()
 
 
 if __name__ == '__main__':
