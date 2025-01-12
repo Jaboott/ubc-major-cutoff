@@ -13,15 +13,20 @@ DB_CONFIG = {
     "port": os.getenv("DB_PORT")
 }
 
-connection_pool = pool.SimpleConnectionPool(
-    minconn=1,
-    maxconn=10,
-    user=DB_CONFIG["user"],
-    password=DB_CONFIG["password"],
-    host=DB_CONFIG["host"],
-    port=DB_CONFIG["port"],
-    database=DB_CONFIG["database"]
-)
+connection_pool = None
+
+
+def start_connection():
+    global connection_pool
+    connection_pool = pool.SimpleConnectionPool(
+        minconn=1,
+        maxconn=10,
+        user=DB_CONFIG["user"],
+        password=DB_CONFIG["password"],
+        host=DB_CONFIG["host"],
+        port=DB_CONFIG["port"],
+        database=DB_CONFIG["database"]
+    )
 
 
 def get_connection():
