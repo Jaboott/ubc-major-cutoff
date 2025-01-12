@@ -1,4 +1,3 @@
--- uncomment for initial db setup --
 -- CREATE TYPE major_type AS ENUM('Major', 'Combined Major', 'Honours', 'Combined Honours');
 
 CREATE TABLE IF NOT EXISTS majors (
@@ -23,6 +22,7 @@ CREATE TABLE IF NOT EXISTS admission_statistics (
 CREATE TABLE IF NOT EXISTS meta_data (
     id SERIAL,
     check_sum VARCHAR(64),
+    success Boolean,
     last_updated TIMESTAMP,
     PRIMARY KEY (id)
 );

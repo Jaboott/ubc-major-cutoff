@@ -1,6 +1,6 @@
 from dotenv import load_dotenv
 
-import psycopg2
+from psycopg2 import pool
 import os
 
 load_dotenv()
@@ -13,17 +13,30 @@ DB_CONFIG = {
     "port": os.getenv("DB_PORT")
 }
 
+connection_pool = pool.SimpleConnectionPool(
+    minconn=1,
+    maxconn=10,
+    user=DB_CONFIG["user"],
+    password=DB_CONFIG["password"],
+    host=DB_CONFIG["host"],
+    port=DB_CONFIG["port"],
+    database=DB_CONFIG["database"]
+)
+
 
 def get_connection():
-    connection = psycopg2.connect(
-        database=DB_CONFIG["database"],
-        host=DB_CONFIG["host"],
-        user=DB_CONFIG["user"],
-        password=DB_CONFIG["password"],
-        port=DB_CONFIG["port"]
-    )
+    if connection_pool:
+        return connection_pool.getconn()
+    else:
+        raise Exception("Connection pool is not initialized")
 
-    return connection
+
+def release_connection(connection):
+    connection_pool.putconn(connection)
+
+
+def close_all_connections():
+    connection_pool.closeall()
 
 
 def execute_query(query, params=None):
@@ -41,6 +54,6 @@ def execute_query(query, params=None):
     except Exception as e:
         raise Exception(f"Error executing query: {e}")
     finally:
-        connection.close()
-
+        if connection:
+            release_connection(connection)
 
