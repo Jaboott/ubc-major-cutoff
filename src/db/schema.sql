@@ -4,7 +4,8 @@ CREATE TABLE IF NOT EXISTS majors (
     name VARCHAR(255),
     id INT NOT NULL,
     type major_type NOT NULL,
-    PRIMARY KEY (id, type)
+    PRIMARY KEY (id),
+    UNIQUE(name, type)
 );
 
 CREATE TABLE IF NOT EXISTS admission_statistics (
@@ -14,9 +15,8 @@ CREATE TABLE IF NOT EXISTS admission_statistics (
     initial_reject INT,
     final_admit INT,
     id INT,
-    type major_type NOT NULL,
-    FOREIGN KEY (id, type) REFERENCES majors(id, type),
-    PRIMARY KEY (year, id, type)
+    FOREIGN KEY (id) REFERENCES majors(id) ON DELETE CASCADE,
+    PRIMARY KEY (year, id)
 );
 
 CREATE TABLE IF NOT EXISTS meta_data (

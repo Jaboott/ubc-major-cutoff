@@ -75,9 +75,9 @@ def handle_change(data):
                 execute_query("INSERT INTO majors VALUES (%s, %s, %s) ON CONFLICT DO NOTHING;",
                               (major_stats.name, major_stats.id, major_stats.type))
                 execute_query(
-                    "INSERT INTO admission_statistics VALUES (%s, %s, %s, %s, %s, %s, %s) ON CONFLICT DO NOTHING;",
+                    "INSERT INTO admission_statistics VALUES (%s, %s, %s, %s, %s, %s) ON CONFLICT DO NOTHING;",
                     (major_stats.year, major_stats.max_grade, major_stats.min_grade, major_stats.initial_reject,
-                     major_stats.final_admit, major_stats.id, major_stats.type))
+                     major_stats.final_admit, major_stats.id))
             except Exception as e:
                 print(major_stats)
                 raise Exception("Failed to insert major_stats into db " + str(e))
