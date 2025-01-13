@@ -124,6 +124,7 @@ def poll():
             print("Time to populate db: " + str(time.time() - start_time))
             return {"message": "checksum have changed, db have been updated successfully in " + str(time.time() - start_time) + " seconds"}
 
+        print("checksum did not change")
         return {"message": "checksum did not change"}
     except Exception as e:
         logging.error(f"Failed to poll: {e}")
