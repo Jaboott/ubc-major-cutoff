@@ -87,7 +87,7 @@ def handle_change(data):
     except Exception as e:
         execute_query("UPDATE meta_data SET success = %s WHERE check_sum = %s", (False, new_checksum))
         print("Failed to populate db")
-        logging.error(e)
+        raise Exception("Failed to insert major_stats into db " + str(e))
 
 
 def init_tables():
@@ -122,6 +122,9 @@ def poll():
             handle_change(data)
         print("Time to populate db: " + str(time.time() - start_time))
     except Exception as e:
-        logging.error(e)
+        logging.error(f"Failed to poll: {e}")
+        raise Exception(e)
     finally:
         close_all_connections()
+
+poll()
