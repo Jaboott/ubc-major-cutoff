@@ -117,14 +117,16 @@ def poll():
         start_connection()
         init_tables()
         print("DB has started")
+
         if has_checksum_changed(data):
             print("Checksum have changed")
             handle_change(data)
-        print("Time to populate db: " + str(time.time() - start_time))
+            print("Time to populate db: " + str(time.time() - start_time))
+            return {"message": "checksum have changed, db have been updated successfully in " + str(time.time() - start_time) + " seconds"}
+
+        return {"message": "checksum did not change"}
     except Exception as e:
         logging.error(f"Failed to poll: {e}")
         raise Exception(e)
     finally:
         close_all_connections()
-
-poll()
