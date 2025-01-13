@@ -1,0 +1,19 @@
+name: DB Ping
+
+on:
+  schedule:
+    - cron: "0 0 * * *"  # Runs once a day at midnight
+
+jobs:
+  ping-db:
+    runs-on: ubuntu-latest
+    steps:
+      - name: Check out repository
+        uses: actions/checkout@v4
+
+      - name: Run DB check
+        run: |
+          # Attempt to connect to Supabase and run a simple query
+          psql "$SUPABASE_DATABASE_URL" -c "SELECT 1;"
+        env:
+          SUPABASE_DATABASE_URL: ${{ secrets.SUPABASE_DATABASE_URL }}
