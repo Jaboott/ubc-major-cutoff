@@ -1,4 +1,4 @@
--- CREATE TYPE major_type AS ENUM('Major', 'Combined Major', 'Honours', 'Combined Honours');
+-- CREATE TYPE major_type AS ENUM('Major', 'Combined_Major', 'Honours', 'Combined_Honours');
 
 CREATE TABLE IF NOT EXISTS majors (
     name VARCHAR(255),

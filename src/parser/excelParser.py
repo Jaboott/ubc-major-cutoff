@@ -72,7 +72,8 @@ def get_major_type(data):
     match = re.search(pattern, data)
 
     if match:
-        major_type = match.group(1).strip()
+        # replace space with _
+        major_type = match.group(1).strip().replace(" ", "_")
         return major_type
     else:
         return None

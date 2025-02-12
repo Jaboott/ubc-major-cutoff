@@ -96,7 +96,7 @@ def init_tables():
         # Create major_type if initial db setup
         if num_tables[0][0] == 0:
             print("Initial db setup")
-            execute_query("CREATE TYPE major_type AS ENUM('Major', 'Combined Major', 'Honours', 'Combined Honours');")
+            execute_query("CREATE TYPE major_type AS ENUM('Major', 'Combined_Major', 'Honours', 'Combined_Honours');")
 
         schema_path = "src/db/schema.sql"
         if not os.path.exists(schema_path):
