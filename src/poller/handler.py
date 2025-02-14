@@ -8,7 +8,7 @@ import hashlib
 import time
 import logging
 
-from src.db.connection import get_connection, close_connection
+from src.db.connection import get_connection
 from src.parser.excelParser import build_major_stats
 
 load_dotenv()
@@ -119,7 +119,7 @@ def init_tables():
 
 
 # TODO verify num of rows
-def handler():
+def handler(event, context):
     try:
         start_time = time.time()
         data = read_document()
@@ -151,6 +151,4 @@ def handler():
     except Exception as e:
         logging.error(f"Failed to poll: {e}")
         raise Exception(e)
-    finally:
-        close_connection()
 
