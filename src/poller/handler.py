@@ -15,14 +15,16 @@ load_dotenv()
 
 
 def read_document():
-    # make this into either config.json or env variable
     url = os.getenv('DOCUMENT_URL')
 
-    try:
-        df = pd.read_csv(url)
-        return df
-    except FileNotFoundError:
-        logging.error('File not found')
+    if url is not None:
+        try:
+            df = pd.read_csv(url)
+            return df
+        except FileNotFoundError:
+            print(f'Did not find the major cutoff file from given url: {url}')
+    else:
+        print(f'env variable DOCUMENT_URL must be set to the url of major cutoff file')
 
     return None
 
@@ -58,7 +60,7 @@ def handle_change(data):
     new_checksum = create_checksum(data)
     dt = datetime.now()
     print("Re-populating db")
-
+    # TODO refactor this to use transactions https://www.geeksforgeeks.org/sql-transactions/
     try:
         # update the checksum in meta_data
         execute_query("INSERT INTO meta_data (check_sum, last_updated, success) VALUES(%s, %s, %s);", (new_checksum, dt, True))
@@ -110,10 +112,17 @@ def init_tables():
 
 
 # TODO verify num of rows
-def poll():
+def handler():
     try:
         start_time = time.time()
         data = read_document()
+
+        if data is None:
+            return {
+                'status_code': 400,
+                'body': {'error': 'Failed to read major cutoff file'}
+            }
+
         start_connection()
         init_tables()
         print("DB has started")
