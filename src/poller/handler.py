@@ -34,25 +34,20 @@ def create_checksum(data):
 
 
 def has_checksum_changed(data):
-    if data is None:
-        return None
-
+    # data is guaranteed to be not None
     try:
         result = execute_query("SELECT COUNT(*) FROM meta_data;")
         checksum = create_checksum(data)
 
-        # returns true if table is empty
+        # returns true if table is empty - fresh setup
         if result[0][0] == 0:
             return True
 
         old_checksum = execute_query("SELECT check_sum FROM meta_data ORDER BY last_updated DESC LIMIT 1;")
-        if old_checksum[0][0] != checksum:
-            return True
-
+        return old_checksum[0][0] != checksum
     except Exception as e:
-        logging.error(e)
-
-    return False
+        print(f'Failed to check for checksum changes with error: {e}')
+        return False
 
 
 # TODO might still have bugs
@@ -140,3 +135,5 @@ def handler():
         raise Exception(e)
     finally:
         close_all_connections()
+
+handler()
