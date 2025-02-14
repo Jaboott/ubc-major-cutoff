@@ -1,6 +1,6 @@
 from dotenv import load_dotenv
 
-from psycopg2 import pool
+import psycopg2
 import os
 
 load_dotenv()
@@ -13,52 +13,27 @@ DB_CONFIG = {
     "port": os.getenv("DB_PORT")
 }
 
-connection_pool = None
-
-
-def start_connection():
-    global connection_pool
-    connection_pool = pool.SimpleConnectionPool(
-        minconn=1,
-        maxconn=10,
-        user=DB_CONFIG["user"],
-        password=DB_CONFIG["password"],
-        host=DB_CONFIG["host"],
-        port=DB_CONFIG["port"],
-        database=DB_CONFIG["database"]
-    )
+DB_CONNECTION = None
 
 
 def get_connection():
-    if connection_pool:
-        return connection_pool.getconn()
+    global DB_CONNECTION
+    if DB_CONNECTION is None:
+        try:
+            DB_CONNECTION = psycopg2.connect(
+                database=DB_CONFIG["database"],
+                user=DB_CONFIG["user"],
+                password=DB_CONFIG["password"],
+                host=DB_CONFIG["host"],
+                port=DB_CONFIG["port"]
+            )
+            return DB_CONNECTION
+        except psycopg2.Error as e:
+            print(f'Failed to get connection - {e}')
+            return None
     else:
-        raise Exception("Connection pool is not initialized")
+        return DB_CONNECTION
 
 
-def release_connection(connection):
-    connection_pool.putconn(connection)
-
-
-def close_all_connections():
-    connection_pool.closeall()
-
-
-def execute_query(query, params=None):
-    try:
-        connection = get_connection()
-
-        with connection.cursor() as cursor:
-            cursor.execute(query, params or ())
-            connection.commit()
-
-            if cursor.description:
-                return cursor.fetchall()
-
-            return []
-    except Exception as e:
-        raise Exception(f"Error executing query: {e}")
-    finally:
-        if connection:
-            release_connection(connection)
-
+def close_connection():
+    DB_CONNECTION.close()
