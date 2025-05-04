@@ -13,7 +13,7 @@ load_dotenv()
 
 
 def load_config():
-    config_path = "src/parser/config.json"
+    config_path = "src/config.json"
     if not os.path.exists(config_path):
         raise FileNotFoundError(f"Config file not found at {config_path}")
 
