@@ -1,37 +1,71 @@
+from io import StringIO
+
+import pandas as pd
+import re
 import requests
-import logging
-import os
-import json
 from bs4 import BeautifulSoup
 
+IGNORE_WORDS = {"sup", "nf", "-", "specialization did not exist", ""}
+URL = "https://science.ubc.ca/students/historical-bsc-specialization-admission-information"
+HEADERS = {'User-Agent': 'Mozilla/5.0'}
 
-def load_config():
-    config_path = "src/config.json"
-    if not os.path.exists(config_path):
-        raise FileNotFoundError(f"Config file not found at {config_path}")
 
+def _get_soup(url=URL):
     try:
-        with open(config_path, "r") as file:
-            config = json.load(file)
-            return config
-    except FileNotFoundError as e:
-        logging.error(f"FileNotFoundError: {e}")
-    except Exception as e:
-        logging.error(e)
+        r = requests.get(url, headers=HEADERS, timeout=30)
+        r.raise_for_status()
+        return BeautifulSoup(r.text, 'html.parser')
+    except requests.exceptions.HTTPError as e:
+        print(f"[ERROR] HTTP {r.status_code}: {r.reason}")
+        raise
+    except requests.exceptions.RequestException as e:
+        print(f"[ERROR] Network problem: {e}")
+        raise
+
+
+def _clean(val) -> float | None:
+    if pd.isna(val):
+        return None
+    txt = str(val).strip().lower()
+    if txt in IGNORE_WORDS:
+        return None
+    return float(re.sub(r"[^\d.]", "", txt))
+
+
+def _parse_basic(df):
+    header = df.iloc[0]
+    df = df[1:]
+    df.columns = header
+    notes = df.pop("Notes").replace("", pd.NA)
+    long = df.melt(id_vars="Specialization", var_name="year", value_name="raw")
+    return pd.DataFrame({
+        "spec": long["Specialization"].str.strip(),
+        "year": long["year"],
+        "type": "DOM",
+        "min_grade": long["raw"].apply(_clean),
+        "notes": notes,
+    })
+
+
+def _parse_complex(df):
+    print(df)
+    return pd.DataFrame({})
 
 
 def scrape():
-    try:
-        config = load_config()
-        URL = config.get("url", "https://science.ubc.ca/students/historical-bsc-specialization-admission-information")
-        page = requests.get(URL)
+    # | Spec | Year | Dom | Min Grade | Notes? |
+    #TODO consider changing schema for notes under major
+    soup = _get_soup()
+    tables = pd.read_html(StringIO(str(soup)), flavor="bs4")
 
-        soup = BeautifulSoup(page.content, "html.parser")
-        print(soup.prettify())
+    dfs = [
+        _parse_basic(tables[0]),
+        _parse_complex(tables[1]),
+        _parse_complex(tables[2]),
+    ]
 
-    except Exception as e:
-        logging.error(e)
-        return None
+    # print(dfs[0])
 
-scrape()
 
+if __name__ == "__main__":
+    scrape()
