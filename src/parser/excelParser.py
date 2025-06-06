@@ -11,6 +11,18 @@ from src.parser.major_stats import MajorStats
 
 load_dotenv()
 
+COLUMNS_MAPPING = {
+    "name": 2,
+    "type": 2,
+    "id": 2,
+    "year": 0,
+    "max_grade": 7,
+    "min_grade": 8,
+    "initial_reject": 5,
+    "final_admit": 6,
+    "option": 1
+  }
+
 
 def load_config():
     config_path = "src/config.json"
@@ -100,35 +112,53 @@ def _convert_nan_to_none(value):
     return value
 
 
-def build_major_stats(data):
-    # loading columns mapping and validating keys
+def _build_major_stats(data):
     try:
-        config = load_config()
-        columns = config.get("columns_mapping", {})
+        name = _get_major_name(data.iloc[COLUMNS_MAPPING["name"]])
+        id = _get_major_id(data.iloc[COLUMNS_MAPPING["id"]])
+        type = _get_major_type(data.iloc[COLUMNS_MAPPING["type"]])
+        year = _convert_nan_to_none(data.iloc[COLUMNS_MAPPING["year"]])
+        max_grade = _convert_nan_to_none(data.iloc[COLUMNS_MAPPING["max_grade"]])
+        min_grade = _convert_nan_to_none(data.iloc[COLUMNS_MAPPING["min_grade"]])
+        initial_reject = _convert_nan_to_none(data.iloc[COLUMNS_MAPPING["initial_reject"]])
+        final_admit = _convert_nan_to_none(data.iloc[COLUMNS_MAPPING["final_admit"]])
+        domestic = _is_domestic(data.iloc[COLUMNS_MAPPING["option"]])
 
-        required_keys = ["name", "id", "type", "year", "max_grade", "min_grade", "initial_reject", "final_admit", "option"]
+        # indicating empty row if major_name is missing
+        if name is None or id is None:
+            return None
 
-        for key in required_keys:
-            if key not in columns:
-                raise ValueError(f"Missing required keys in configuration: {key}")
+        major_stats = MajorStats(name, id, type, year, max_grade, min_grade, initial_reject, final_admit, domestic)
+
+        return major_stats
     except Exception as e:
-        print(e)
+        logging.error(e)
         return None
 
-    name = _get_major_name(data.iloc[columns["name"]])
-    id = _get_major_id(data.iloc[columns["id"]])
-    type = _get_major_type(data.iloc[columns["type"]])
-    year = _convert_nan_to_none(data.iloc[columns["year"]])
-    max_grade = _convert_nan_to_none(data.iloc[columns["max_grade"]])
-    min_grade = _convert_nan_to_none(data.iloc[columns["min_grade"]])
-    initial_reject = _convert_nan_to_none(data.iloc[columns["initial_reject"]])
-    final_admit = _convert_nan_to_none(data.iloc[columns["final_admit"]])
-    domestic = _is_domestic(data.iloc[columns["option"]])
 
-    # indicating empty row if major_name is missing
-    if name is None or id is None:
+def parse():
+    """
+    Reads the major cutoff Excel file then cleans + parses the data
+    :return: List of major_stats
+    """
+    url = os.getenv('DOCUMENT_URL')
+    if url is None:
+        print(f'env variable DOCUMENT_URL must be set to the url of major cutoff file')
         return None
 
-    major_stats = MajorStats(name, id, type, year, max_grade, min_grade, initial_reject, final_admit, domestic)
+    df = pd.read_csv(url)
+    res = []
 
-    return major_stats
+    for index, row in df.iterrows():
+        major_stats = _build_major_stats(row)
+
+        if major_stats is not None:
+            data.append(major_stats)
+
+    return res
+
+
+if __name__ == '__main__':
+    data = parse()
+    for d in data:
+        print(d)
