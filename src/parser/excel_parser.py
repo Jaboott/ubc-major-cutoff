@@ -39,7 +39,7 @@ def load_config():
         logging.error(e)
 
 
-def _get_major_id(data):
+def get_major_id(data):
     if pd.isna(data):
         return None
 
@@ -54,7 +54,7 @@ def _get_major_id(data):
         return None
 
 
-def _get_major_name(data):
+def get_major_name(data):
     if pd.isna(data):
         return None
 
@@ -76,7 +76,7 @@ def _get_major_name(data):
         return None
 
 
-def _get_major_type(data):
+def get_major_type(data):
     if pd.isna(data):
         return None
 
@@ -105,7 +105,7 @@ def _is_domestic(data):
     return True
 
 
-def _convert_nan_to_none(value):
+def convert_nan_to_none(value):
     if pd.isna(value):
         return None
 
@@ -113,15 +113,20 @@ def _convert_nan_to_none(value):
 
 
 def _build_major_stats(data):
+    """
+    Cleans the input data then returns an object of MajorStats
+    :param data: A row of a data frame with major cutoff
+    :return: A MajorStats object
+    """
     try:
-        name = _get_major_name(data.iloc[COLUMNS_MAPPING["name"]])
-        id = _get_major_id(data.iloc[COLUMNS_MAPPING["id"]])
-        type = _get_major_type(data.iloc[COLUMNS_MAPPING["type"]])
-        year = _convert_nan_to_none(data.iloc[COLUMNS_MAPPING["year"]])
-        max_grade = _convert_nan_to_none(data.iloc[COLUMNS_MAPPING["max_grade"]])
-        min_grade = _convert_nan_to_none(data.iloc[COLUMNS_MAPPING["min_grade"]])
-        initial_reject = _convert_nan_to_none(data.iloc[COLUMNS_MAPPING["initial_reject"]])
-        final_admit = _convert_nan_to_none(data.iloc[COLUMNS_MAPPING["final_admit"]])
+        name = get_major_name(data.iloc[COLUMNS_MAPPING["name"]])
+        id = get_major_id(data.iloc[COLUMNS_MAPPING["id"]])
+        type = get_major_type(data.iloc[COLUMNS_MAPPING["type"]])
+        year = convert_nan_to_none(data.iloc[COLUMNS_MAPPING["year"]])
+        max_grade = convert_nan_to_none(data.iloc[COLUMNS_MAPPING["max_grade"]])
+        min_grade = convert_nan_to_none(data.iloc[COLUMNS_MAPPING["min_grade"]])
+        initial_reject = convert_nan_to_none(data.iloc[COLUMNS_MAPPING["initial_reject"]])
+        final_admit = convert_nan_to_none(data.iloc[COLUMNS_MAPPING["final_admit"]])
         domestic = _is_domestic(data.iloc[COLUMNS_MAPPING["option"]])
 
         # indicating empty row if major_name is missing
@@ -139,7 +144,7 @@ def _build_major_stats(data):
 def parse():
     """
     Reads the major cutoff Excel file then cleans + parses the data
-    :return: List of major_stats
+    :return: List of major_stats objects
     """
     url = os.getenv('DOCUMENT_URL')
     if url is None:
@@ -149,11 +154,11 @@ def parse():
     df = pd.read_csv(url)
     res = []
 
-    for index, row in df.iterrows():
+    for _, row in df.iterrows():
         major_stats = _build_major_stats(row)
 
         if major_stats is not None:
-            data.append(major_stats)
+            res.append(major_stats)
 
     return res
 
