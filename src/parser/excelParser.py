@@ -27,7 +27,7 @@ def load_config():
         logging.error(e)
 
 
-def get_major_id(data):
+def _get_major_id(data):
     if pd.isna(data):
         return None
 
@@ -42,7 +42,7 @@ def get_major_id(data):
         return None
 
 
-def get_major_name(data):
+def _get_major_name(data):
     if pd.isna(data):
         return None
 
@@ -64,7 +64,7 @@ def get_major_name(data):
         return None
 
 
-def get_major_type(data):
+def _get_major_type(data):
     if pd.isna(data):
         return None
 
@@ -79,7 +79,7 @@ def get_major_type(data):
         return None
 
 
-def is_domestic(data):
+def _is_domestic(data):
     if pd.isna(data):
         return None
 
@@ -93,7 +93,7 @@ def is_domestic(data):
     return True
 
 
-def convert_nan_to_none(value):
+def _convert_nan_to_none(value):
     if pd.isna(value):
         return None
 
@@ -115,15 +115,15 @@ def build_major_stats(data):
         print(e)
         return None
 
-    name = get_major_name(data.iloc[columns["name"]])
-    id = get_major_id(data.iloc[columns["id"]])
-    type = get_major_type(data.iloc[columns["type"]])
-    year = convert_nan_to_none(data.iloc[columns["year"]])
-    max_grade = convert_nan_to_none(data.iloc[columns["max_grade"]])
-    min_grade = convert_nan_to_none(data.iloc[columns["min_grade"]])
-    initial_reject = convert_nan_to_none(data.iloc[columns["initial_reject"]])
-    final_admit = convert_nan_to_none(data.iloc[columns["final_admit"]])
-    domestic = is_domestic(data.iloc[columns["option"]])
+    name = _get_major_name(data.iloc[columns["name"]])
+    id = _get_major_id(data.iloc[columns["id"]])
+    type = _get_major_type(data.iloc[columns["type"]])
+    year = _convert_nan_to_none(data.iloc[columns["year"]])
+    max_grade = _convert_nan_to_none(data.iloc[columns["max_grade"]])
+    min_grade = _convert_nan_to_none(data.iloc[columns["min_grade"]])
+    initial_reject = _convert_nan_to_none(data.iloc[columns["initial_reject"]])
+    final_admit = _convert_nan_to_none(data.iloc[columns["final_admit"]])
+    domestic = _is_domestic(data.iloc[columns["option"]])
 
     # indicating empty row if major_name is missing
     if name is None or id is None:
