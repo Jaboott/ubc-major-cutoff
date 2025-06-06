@@ -19,6 +19,6 @@ class MajorStats:
                 f"Min Grade: {self.min_grade}\n"
                 f"Initial Reject: {self.initial_reject}\n"
                 f"Final Admit: {self.final_admit}\n"
-                f"Domestic: {self.domestic}"
+                f"Domestic: {self.domestic}\n"
                 f"----------------------------------------")
 
