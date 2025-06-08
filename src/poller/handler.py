@@ -2,132 +2,138 @@ from datetime import datetime
 
 from dotenv import load_dotenv
 
-import os
-import pandas as pd
-import hashlib
-import time
-import logging
+import json, hashlib, time, logging
 
 from src.db.connection import get_connection
-from src.parser.excelParser import build_major_stats
+from src.parser.excel_parser import parse
+from src.scraper.scrape import scrape
 
 load_dotenv()
 
 DB_CONNECTION = get_connection()
 
 
-def read_document():
-    url = os.getenv('DOCUMENT_URL')
-
-    if url is not None:
-        try:
-            df = pd.read_csv(url)
-            return df
-        except FileNotFoundError:
-            print(f'Did not find the major cutoff file from given url: {url}')
-    else:
-        print(f'env variable DOCUMENT_URL must be set to the url of major cutoff file')
-
-    return None
-
-
 def create_checksum(data):
-    return hashlib.sha256(data.to_string().encode('utf-8')).hexdigest()
+    serialized = json.dumps(
+        data,
+        sort_keys=True,
+        separators=(",", ":"),
+        default=str
+    ).encode("utf-8")
+    return hashlib.sha256(serialized).hexdigest()
 
 
-def has_checksum_changed(data):
+def has_checksum_changed(sheet_data, scrape_data):
     # data is guaranteed to be not None
     try:
         with DB_CONNECTION.cursor() as cursor:
             cursor.execute("SELECT COUNT(*) FROM meta_data;")
             result = cursor.fetchall()
-            checksum = create_checksum(data)
+            sheet_checksum = create_checksum(sheet_data)
+            scrape_checksum = create_checksum(scrape_data)
 
             # returns true if table is empty - fresh setup
             if result[0][0] == 0:
                 return True
 
-            cursor.execute("SELECT check_sum FROM meta_data ORDER BY last_updated DESC LIMIT 1;")
-            old_checksum = cursor.fetchall()
-            return old_checksum[0][0] != checksum
+            cursor.execute("SELECT sheet_checksum, scrape_checksum FROM meta_data ORDER BY last_updated DESC;")
+            old_checksum = cursor.fetchone()
+
+            if old_checksum[0] == sheet_checksum and old_checksum[1] == scrape_checksum:
+                return False
+
+            if old_checksum[0] != sheet_checksum:
+                print("Checksum for sheet have changed")
+
+            if old_checksum[1] != scrape_checksum:
+                print("Checksum for scrape have changed")
+
+            return True
     except Exception as e:
         print(f'Failed to check for checksum changes with error: {e}')
         return False
 
 
-# TODO might still have bugs
-def handle_change(data):
-    new_checksum = create_checksum(data)
+def handle_change(sheet_data, scrape_data):
+    new_sheet_checksum = create_checksum(sheet_data)
+    new_scrape_checksum = create_checksum(scrape_data)
+    data = {}
     dt = datetime.now()
     success = True
     print("Re-populating db")
+
+    for major_stats in sheet_data + scrape_data:
+        if major_stats.id in data:
+            data[major_stats.id].merge_with(major_stats)
+        else:
+            data[major_stats.id] = major_stats
+
     try:
         with DB_CONNECTION.cursor() as cursor:
-            cursor.execute("TRUNCATE TABLE admission_statistics, majors;")
-
             # re-populating the db with the new data
-            for index, row in data.iterrows():
-                major_stats = build_major_stats(row)
-
-                if major_stats is None:
-                    continue
-
+            for major_stats in data.values():
                 try:
-                    cursor.execute("INSERT INTO majors VALUES (%s, %s, %s) ON CONFLICT DO NOTHING;",
-                                   (major_stats.name, major_stats.id, major_stats.type))
                     cursor.execute(
-                        "INSERT INTO admission_statistics VALUES (%s, %s, %s, %s, %s, %s, %s) ON CONFLICT DO NOTHING;",
+                        """
+                        INSERT INTO majors (name, id, type, note)
+                        VALUES (%s, %s, %s, %s) 
+                        ON CONFLICT (name, type) 
+                        DO UPDATE SET 
+                            id = EXCLUDED.id,
+                            note = EXCLUDED.note
+                        RETURNING uid;
+                        """,
+                        (major_stats.name, major_stats.id, major_stats.type, major_stats.note))
+
+                    uid = cursor.fetchone()[0]
+                    cursor.execute(
+                        """
+                        INSERT INTO admission_statistics 
+                        VALUES (%s, %s, %s, %s, %s, %s, %s) 
+                        ON CONFLICT (uid, year, domestic) 
+                        DO UPDATE SET 
+                            max_grade = EXCLUDED.max_grade,
+                            min_grade = EXCLUDED.min_grade,
+                            initial_reject = EXCLUDED.initial_reject,
+                            final_admit = EXCLUDED.final_admit;
+                        """,
                         (major_stats.year, major_stats.max_grade, major_stats.min_grade, major_stats.initial_reject,
-                         major_stats.final_admit, major_stats.id, major_stats.domestic))
+                         major_stats.final_admit, uid, major_stats.domestic))
                 except Exception as e:
                     print(f"Failed to insert {major_stats} to db: {e}")
                     success = False
 
             if not success:
                 DB_CONNECTION.rollback()
-
+                print(f"Failed to populate db")
+            else:
+                print("Successfully populated db")
             # update the checksum in meta_data
-            cursor.execute("INSERT INTO meta_data (check_sum, last_updated, success) VALUES(%s, %s, %s);",
-                           (new_checksum, dt, success))
+            cursor.execute(
+                "INSERT INTO meta_data (sheet_checksum, scrape_checksum, last_updated, success) VALUES(%s, %s, %s, %s);",
+                (new_sheet_checksum, new_scrape_checksum, dt, success))
             DB_CONNECTION.commit()
-            print("Successfully populated db")
     except Exception as e:
         print(f"Failed to get cursor from connection with error: {e}")
-
-
-def init_tables():
-    try:
-        with DB_CONNECTION.cursor() as cursor:
-            cursor.execute("SELECT COUNT(*) FROM information_schema.tables WHERE table_schema = 'public';")
-            num_tables = cursor.fetchall()
-            # Create major_type if initial db setup
-            if num_tables[0][0] == 0:
-                print("Initial db setup")
-                cursor.execute("CREATE TYPE major_type AS ENUM('Major', 'Combined_Major', 'Honours', 'Combined_Honours');")
-
-            schema_path = "src/db/schema.sql"
-            if not os.path.exists(schema_path):
-                raise FileNotFoundError(f"Schema file not found at {schema_path}")
-
-            with open(schema_path, "r") as file:
-                tables_schema = file.read()
-                cursor.execute(tables_schema)
-
-            DB_CONNECTION.commit()
-    except Exception as e:
-        logging.error("Failed to initialize tables " + str(e))
 
 
 # TODO verify num of rows
 def handler(event, context):
     try:
         start_time = time.time()
-        data = read_document()
+        sheet_data = parse()
+        scrape_data = scrape()
 
-        if data is None:
+        errors = []
+        if sheet_data is None:
+            errors.append("sheet_data failed to load")
+        if scrape_data is None:
+            errors.append("scrape_data failed to load")
+
+        if errors:
             return {
                 'status_code': 400,
-                'body': {'error': 'Failed to read major cutoff file'}
+                'body': {'errors': errors}
             }
 
         if DB_CONNECTION is None:
@@ -136,13 +142,9 @@ def handler(event, context):
                 'body': {'error': 'Failed to connect to db'}
             }
 
-        init_tables()
-        print("DB has started")
-
-        if has_checksum_changed(data):
-            print("Checksum have changed")
-            handle_change(data)
-            print("Time to populate db: " + str(time.time() - start_time))
+        if has_checksum_changed(sheet_data, scrape_data):
+            handle_change(sheet_data, scrape_data)
+            print(f"Populating db took: {str(time.time() - start_time)} milliseconds")
             return {"message": "checksum have changed, db have been updated successfully in " + str(
                 time.time() - start_time) + " seconds"}
 
@@ -152,3 +154,6 @@ def handler(event, context):
         logging.error(f"Failed to poll: {e}")
         raise Exception(e)
 
+
+if __name__ == '__main__':
+    handler(None, None)

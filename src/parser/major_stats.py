@@ -1,5 +1,5 @@
 class MajorStats:
-    def __init__(self, name, id, type, year, max_grade, min_grade, initial_reject, final_admit, domestic):
+    def __init__(self, name, id, type, year, max_grade, min_grade, initial_reject, final_admit, domestic, note=""):
         self.name = name
         self.id = id
         self.type = type
@@ -9,6 +9,7 @@ class MajorStats:
         self.initial_reject = initial_reject
         self.final_admit = final_admit
         self.domestic = domestic
+        self.note = note
 
     def __str__(self):
         return (f"Major Name: {self.name}\n"
@@ -19,6 +20,12 @@ class MajorStats:
                 f"Min Grade: {self.min_grade}\n"
                 f"Initial Reject: {self.initial_reject}\n"
                 f"Final Admit: {self.final_admit}\n"
-                f"Domestic: {self.domestic}"
-                f"----------------------------------------")
+                f"Domestic: {self.domestic}\n"
+                f"Note: {self.note}\n"
+                f"----------------------------------------\n")
 
+    def merge_with(self, other):
+        for field_name in vars(self).keys():
+            value = getattr(self, field_name)
+            if value is None:
+                setattr(self, field_name, getattr(other, field_name))
