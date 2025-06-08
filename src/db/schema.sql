@@ -25,7 +25,8 @@ CREATE TABLE IF NOT EXISTS admission_statistics (
 
 CREATE TABLE IF NOT EXISTS meta_data (
     id SERIAL,
-    check_sum VARCHAR(64),
+    sheet_checksum VARCHAR(64),
+    scrape_checksum VARCHAR(64),
     success BOOLEAN,
     last_updated TIMESTAMP,
     PRIMARY KEY (id)
