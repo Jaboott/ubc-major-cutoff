@@ -22,5 +22,10 @@ class MajorStats:
                 f"Final Admit: {self.final_admit}\n"
                 f"Domestic: {self.domestic}\n"
                 f"Note: {self.note}\n"
-                f"----------------------------------------")
+                f"----------------------------------------\n")
 
+    def merge_with(self, other):
+        for field_name in vars(self).keys():
+            value = getattr(self, field_name)
+            if value is None:
+                setattr(self, field_name, getattr(other, field_name))
