@@ -2,11 +2,7 @@ from datetime import datetime
 
 from dotenv import load_dotenv
 
-import os
-import pandas as pd
-import hashlib
-import time
-import logging
+import json, hashlib, time, logging
 
 from src.db.connection import get_connection
 from src.parser.excel_parser import parse
@@ -18,7 +14,13 @@ DB_CONNECTION = get_connection()
 
 
 def create_checksum(data):
-    return hashlib.sha256(str(data).encode('utf-8')).hexdigest()
+    serialized = json.dumps(
+        data,
+        sort_keys=True,
+        separators=(",", ":"),
+        default=str
+    ).encode("utf-8")
+    return hashlib.sha256(serialized).hexdigest()
 
 
 def has_checksum_changed(sheet_data, scrape_data):
