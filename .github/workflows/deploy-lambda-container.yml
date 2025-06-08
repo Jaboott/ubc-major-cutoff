@@ -54,6 +54,12 @@ jobs:
             --publish
           echo "Image updated to tag $IMAGE_TAG"
 
+      - name: Wait for Lambda to finish updating
+        run: |
+          aws lambda wait function-updated \
+            --function-name $FUNCTION_NAME
+          echo "Code update succeeded and is now active."
+
       - name: Update Lambda env vars
         run: |
           aws lambda update-function-configuration \
