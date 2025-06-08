@@ -1,0 +1,62 @@
+name: Build and Deploy
+
+on:
+  push:
+    branches: [master]
+
+env:
+  AWS_REGION: us-east-1
+  ECR_REGISTRY: ${{ secrets.AWS_ACCOUNT_ID }}.dkr.ecr.east.amazonaws.com
+  ECR_REPOSITORY: ubc-major-cutoff
+  IMAGE_TAG: ${{ github.sha }}
+  FUNCTION_NAME: ubc-major-cutoff-lambda
+
+jobs:
+  build:
+    runs-on: ubuntu-latest
+
+    steps:
+    - name: Check out repository code
+      uses: actions/checkout@v4
+
+    - name: Configure AWS credentials
+      uses: aws-actions/configure-aws-credentials@v4
+      with:
+        aws-access-key-id: ${{ secrets.AWS_ACCESS_KEY_ID }}
+        aws-secret-access-key: ${{ secrets.AWS_SECRET_ACCESS_KEY }}
+        aws-region: ${{ env.AWS_REGION }}
+
+    - name: Login to AWS ECR
+      uses: aws-actions/amazon-ecr-login@v2
+
+    - name: Build Docker Image
+      run: |
+        docker build -t $ECR_REGISTRY/$ECR_REPOSITORY:$IMAGE_TAG .
+        docker push $ECR_REGISTRY/$ECR_REPOSITORY:$IMAGE_TAG
+
+  deploy:
+      needs: build
+      runs-on: ubuntu-latest
+
+      steps:
+      - name: Configure AWS credentials
+        uses: aws-actions/configure-aws-credentials@v4
+        with:
+          aws-access-key-id: ${{ secrets.AWS_ACCESS_KEY_ID }}
+          aws-secret-access-key: ${{ secrets.AWS_SECRET_ACCESS_KEY }}
+          aws-region: ${{ env.AWS_REGION }}
+
+      - name: Update Lambda
+        run: |
+          aws lambda update-function-code \
+            --function-name $FUNCTION_NAME \
+            --image-uri $ECR_REGISTRY/$ECR_REPOSITORY:$IMAGE_TAG \
+            --publish
+          echo "Image updated to tag $IMAGE_TAG"
+
+      - name: Update Lambda env vars
+        run: |
+          aws lambda update-function-configuration \
+            --function-name $FUNCTION_NAME \
+            --environment "Variables={DB_USER=${{ secrets.DB_USER }},DB_PASSWORD=${{ secrets.DB_PASSWORD }},DB_HOST=${{ secrets.DB_HOST }},DB_PORT=${{ secrets.DB_PORT }},DB_NAME=${{ secrets.DB_NAME }}}"
+          echo "Environment variables pushed"
