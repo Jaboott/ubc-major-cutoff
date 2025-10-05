@@ -108,11 +108,10 @@ def _build_major_stats(data):
         notes = convert_nan_to_none(data.iloc[COLUMNS_MAPPING["notes"]])
 
         # indicating empty row if major_name is missing
-        if name is None or id is None:
+        if name is None:
             return None
 
         major_stats = MajorStats(name, id, type, year, max_grade, min_grade, initial_reject, final_admit, domestic, notes)
-
         return major_stats
     except Exception as e:
         print(e)
@@ -148,4 +147,4 @@ def scrape():
 if __name__ == '__main__':
     data = scrape()
     for d in data:
-        print(d)
+        print(d.id)

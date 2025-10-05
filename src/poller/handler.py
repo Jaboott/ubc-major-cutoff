@@ -36,17 +36,18 @@ def has_checksum_changed(sheet_data, scrape_data):
             if result[0][0] == 0:
                 return True
 
-            cursor.execute("SELECT sheet_checksum, scrape_checksum FROM meta_data ORDER BY last_updated DESC;")
-            old_checksum = cursor.fetchone()
+            cursor.execute("SELECT sheet_checksum, scrape_checksum, success FROM meta_data ORDER BY last_updated DESC;")
+            db_row = cursor.fetchone()
 
-            if old_checksum[0] == sheet_checksum and old_checksum[1] == scrape_checksum:
+            if db_row[0] == sheet_checksum and db_row[1] == scrape_checksum and db_row[2]:
                 return False
 
-            if old_checksum[0] != sheet_checksum:
+            if db_row[0] != sheet_checksum:
                 print("Checksum for sheet have changed")
-
-            if old_checksum[1] != scrape_checksum:
-                print("Checksum for scrape have changed")
+            elif db_row[1] != scrape_checksum:
+                print("Checksum for website have changed")
+            else:
+                print("Last update has status: failed")
 
             return True
     except Exception as e:
@@ -62,16 +63,23 @@ def handle_change(sheet_data, scrape_data):
     success = True
     print("Re-populating db")
 
+    # for major that appears in both sheet and site, combine them
     for major_stats in sheet_data + scrape_data:
-        if major_stats.id in data:
-            data[major_stats.id].merge_with(major_stats)
+        temp_type = major_stats.type or "Major"
+        key = str(major_stats.name + ":" + temp_type + ":" + str(major_stats.year))
+
+        if temp_type in data:
+            data[key].merge_with(major_stats)
+            print("merged")
         else:
-            data[major_stats.id] = major_stats
+            data[key] = major_stats
 
     try:
         with DB_CONNECTION.cursor() as cursor:
             # re-populating the db with the new data
             for major_stats in data.values():
+                if major_stats.type is None:
+                    major_stats.type = "Major"
                 try:
                     cursor.execute(
                         """
@@ -115,7 +123,6 @@ def handle_change(sheet_data, scrape_data):
             DB_CONNECTION.commit()
     except Exception as e:
         print(f"Failed to get cursor from connection with error: {e}")
-
 
 # TODO verify num of rows
 def handler(event, context):

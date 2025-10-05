@@ -4,7 +4,7 @@ CREATE TYPE major_type AS ENUM('Major', 'Combined_Major', 'Honours', 'Combined_H
 CREATE TABLE IF NOT EXISTS majors (
     uid SERIAL,
     name VARCHAR(255),
-    id INT NOT NULL,
+    id INT,
     type major_type NOT NULL,
     note TEXT,
     PRIMARY KEY (uid),
