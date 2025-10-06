@@ -1,3 +1,4 @@
+import sys
 from datetime import datetime
 
 from dotenv import load_dotenv
@@ -58,7 +59,8 @@ def has_checksum_changed(sheet_data, scrape_data):
 def handle_change(sheet_data, scrape_data):
     new_sheet_checksum = create_checksum(sheet_data)
     new_scrape_checksum = create_checksum(scrape_data)
-    data = {}
+    admission_data = sheet_data + scrape_data
+    major_data = {}
     dt = datetime.now()
     success = True
     print("Re-populating db")
@@ -66,50 +68,66 @@ def handle_change(sheet_data, scrape_data):
     # for major that appears in both sheet and site, combine them
     for major_stats in sheet_data + scrape_data:
         temp_type = major_stats.type or "Major"
-        key = str(major_stats.name + ":" + temp_type + ":" + str(major_stats.year))
+        key = str(major_stats.name + ":" + temp_type)
 
-        if temp_type in data:
-            data[key].merge_with(major_stats)
-            print("merged")
+        # merge the major data from spreadsheet and website
+        if key in major_data:
+            major_data[key].merge_with(major_stats)
         else:
-            data[key] = major_stats
+            major_data[key] = major_stats
 
     try:
         with DB_CONNECTION.cursor() as cursor:
-            # re-populating the db with the new data
-            for major_stats in data.values():
+            # populating the majors table with data
+            for major_stats in major_data.values():
                 if major_stats.type is None:
                     major_stats.type = "Major"
                 try:
                     cursor.execute(
                         """
                         INSERT INTO majors (name, id, type, note)
-                        VALUES (%s, %s, %s, %s) 
-                        ON CONFLICT (name, type) 
-                        DO UPDATE SET 
-                            id = EXCLUDED.id,
-                            note = EXCLUDED.note
-                        RETURNING uid;
+                        VALUES (%s, %s, %s, %s)
+                        ON CONFLICT (name, type)
+                            DO UPDATE SET name = EXCLUDED.name,
+                                          id   = EXCLUDED.id,
+                                          type = EXCLUDED.type,
+                                          note = EXCLUDED.note
                         """,
                         (major_stats.name, major_stats.id, major_stats.type, major_stats.note))
-
-                    uid = cursor.fetchone()[0]
-                    cursor.execute(
-                        """
-                        INSERT INTO admission_statistics 
-                        VALUES (%s, %s, %s, %s, %s, %s, %s) 
-                        ON CONFLICT (uid, year, domestic) 
-                        DO UPDATE SET 
-                            max_grade = EXCLUDED.max_grade,
-                            min_grade = EXCLUDED.min_grade,
-                            initial_reject = EXCLUDED.initial_reject,
-                            final_admit = EXCLUDED.final_admit;
-                        """,
-                        (major_stats.year, major_stats.max_grade, major_stats.min_grade, major_stats.initial_reject,
-                         major_stats.final_admit, uid, major_stats.domestic))
                 except Exception as e:
-                    print(f"Failed to insert {major_stats} to db: {e}")
+                    print(f"Failed to insert {major_stats} to majors table with error: {e}")
                     success = False
+
+            if success:
+                # populating the majors stats table
+                for major_stats in admission_data:
+                    if major_stats.type is None:
+                        major_stats.type = "Major"
+                    try:
+                        cursor.execute(
+                            """
+                            SELECT uid
+                            FROM majors
+                            WHERE name = %s
+                              AND type = %s
+                            """,
+                            (major_stats.name, major_stats.type))
+                        uid = cursor.fetchone()[0]
+                        cursor.execute(
+                            """
+                            INSERT INTO admission_statistics
+                            VALUES (%s, %s, %s, %s, %s, %s, %s)
+                            ON CONFLICT (uid, year, domestic)
+                                DO UPDATE SET max_grade      = EXCLUDED.max_grade,
+                                              min_grade      = EXCLUDED.min_grade,
+                                              initial_reject = EXCLUDED.initial_reject,
+                                              final_admit    = EXCLUDED.final_admit;
+                            """,
+                            (major_stats.year, major_stats.max_grade, major_stats.min_grade, major_stats.initial_reject,
+                             major_stats.final_admit, uid, major_stats.domestic))
+                    except Exception as e:
+                        print(f"Failed to insert {major_stats} to admission_statistics table wit error: {e}")
+                        success = False
 
             if not success:
                 DB_CONNECTION.rollback()
@@ -123,6 +141,7 @@ def handle_change(sheet_data, scrape_data):
             DB_CONNECTION.commit()
     except Exception as e:
         print(f"Failed to get cursor from connection with error: {e}")
+
 
 # TODO verify num of rows
 def handler(event, context):
