@@ -50,7 +50,7 @@ def get_major(major_uid):
         db.close()
 
 
-@app.route('/api/admissions/<int:major_uid>')
+@app.route('/api/admission/<int:major_uid>')
 def get_admission_statistics(major_uid):
     db = create_db_connection()
     try:
@@ -64,7 +64,7 @@ def get_admission_statistics(major_uid):
         db.close()
 
 
-@app.route('/api/average-cutoff')
+@app.route('/api/average-cutoffs')
 def get_average_cutoff():
     db = create_db_connection()
     try:
@@ -84,15 +84,26 @@ def get_average_cutoff():
     finally:
         db.close()
 
-# @app.route('/api/max-admissions')
-# def get_max_cutoff():
-#     db = create_db_connection()
-#     try:
-#         max_admission_statistics = db.fetchall(
-#             """
-#
-#             """
-#         )
+@app.route('/api/max-admissions')
+def get_max_cutoff():
+    db = create_db_connection()
+    try:
+        max_admission_statistics = db.fetchall(
+            """
+            select distinct on (year) year, uid, min_grade, max_grade
+            from admission_statistics
+            where min_grade is not null
+            order by year, min_grade desc;
+            """
+        )
+        if max_admission_statistics is None:
+            return jsonify({'status': 'error', 'message': 'max admissions not available'}), 404
+        return jsonify({'status': 'ok', 'data': max_admission_statistics}), 200
+    except Exception as e:
+        return jsonify({'status': 'error', 'message': str(e)}), 500
+    finally:
+        db.close()
+
 
 if __name__ == '__main__':
     app.run()
