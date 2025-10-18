@@ -19,7 +19,7 @@ export function DetailedDataTable({majorName, isDomestic, data}: DetailedDataTab
     // Calculate totals and averages
     const totalInitialReject = data.reduce((sum, d) => sum + d.initial_reject, 0)
     const totalFinalAdmit = data.reduce((sum, d) => sum + d.final_admit, 0)
-    const avgMinGrade = data.reduce((sum, d) => sum + d.grade, 0) / data.length
+    const avgMinGrade = data.reduce((sum, d) => sum + d.cutoff, 0) / data.length
 
     return (
         <Card className="hover-lift transition-all duration-300">
@@ -155,8 +155,8 @@ export function DetailedDataTable({majorName, isDomestic, data}: DetailedDataTab
                         <li>
                             Average acceptance rate:{" "}
                             <span className="font-semibold text-foreground">
-                {((s = data.reduce((a, d) => d.initial_rejects && d.final_admits ? {
-                    sum: a.sum + (d.final_admits / (d.final_admits + d.initial_rejects)) * 100,
+                {((s = data.reduce((a, d) => d.initial_reject && d.final_admit ? {
+                    sum: a.sum + (d.final_admit / (d.final_admit + d.initial_reject)) * 100,
                     count: a.count + 1
                 } : a, {sum: 0, count: 0})) => s.count ? s.sum / s.count : 0)().toFixed(2)}%
               </span>
