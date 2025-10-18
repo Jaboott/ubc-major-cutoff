@@ -12,14 +12,14 @@ interface DetailedDataTableProps {
 export function DetailedDataTable({majorName, isDomestic, data}: DetailedDataTableProps) {
     data.forEach((data: any) => {
         data.cutoff = Number(data.cutoff)
-        data.average_max_grade = Number(data.average_max_grade)
-        data.initial_rejects = Number(data.initial_rejects)
-        data.final_admits = Number(data.final_admits)
+        data.max_grade = Number(data.max_grade)
+        data.initial_reject = Number(data.initial_reject)
+        data.final_admit = Number(data.final_admit)
     })
     // Calculate totals and averages
-    const totalInitialReject = data.reduce((sum, d) => sum + d.initial_rejects, 0)
-    const totalFinalAdmit = data.reduce((sum, d) => sum + d.final_admits, 0)
-    const avgMinGrade = data.reduce((sum, d) => sum + d.average_max_grade, 0) / data.length
+    const totalInitialReject = data.reduce((sum, d) => sum + d.initial_reject, 0)
+    const totalFinalAdmit = data.reduce((sum, d) => sum + d.final_admit, 0)
+    const avgMinGrade = data.reduce((sum, d) => sum + d.grade, 0) / data.length
 
     return (
         <Card className="hover-lift transition-all duration-300">
@@ -89,6 +89,7 @@ export function DetailedDataTable({majorName, isDomestic, data}: DetailedDataTab
                         <TableBody>
                             {data.map((row, index) => {
                                 const acceptRate = (row.final_admits / (row.final_admits + row.initial_rejects)) * 100
+                                console.log(acceptRate)
                                 const prevRow = index > 0 ? data[index - 1] : null
                                 const gpaTrend = prevRow ? row.cutoff - prevRow.cutoff : 0
 
@@ -113,21 +114,23 @@ export function DetailedDataTable({majorName, isDomestic, data}: DetailedDataTab
                                         </TableCell>
                                         <TableCell>
                                             <span
-                                                className="text-muted-foreground">{row.average_max_grade !== 0 ? row.average_max_grade.toFixed(2) : "unknown"}</span>
+                                                className="text-muted-foreground">{row.max_grade !== 0 ? row.max_grade.toFixed(2) : ""}</span>
                                         </TableCell>
                                         <TableCell className="text-right">
                                             <span
-                                                className="text-destructive font-medium">{row.initial_rejects !== 0 ? row.initial_rejects.toLocaleString() : "unknown"}</span>
+                                                className="text-destructive font-medium">{row.initial_reject !== 0 ? row.initial_reject.toLocaleString() : ""}</span>
                                         </TableCell>
                                         <TableCell className="text-right">
                                             <span
-                                                className="text-accent font-medium">{row.final_admits !== 0 ? row.final_admits.toLocaleString() : "unknown"}</span>
+                                                className="text-accent font-medium">{row.final_admit !== 0 ? row.final_admit.toLocaleString() : ""}</span>
                                         </TableCell>
-                                        <TableCell className="text-right">
+                                        <TableCell className="text-right">{
+                                            !Number.isNaN(acceptRate) &&
                                             <Badge variant={acceptRate > 50 ? "default" : "secondary"}
                                                    className="font-mono text-xs">
-                                                {acceptRate ? `${acceptRate.toFixed(1)}%` : "unknown"}
+                                                {acceptRate.toFixed(1)}%
                                             </Badge>
+                                        }
                                         </TableCell>
                                     </TableRow>
                                 )
