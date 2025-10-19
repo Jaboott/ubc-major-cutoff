@@ -30,14 +30,14 @@ export function DetailedDataTable({majorName, isDomestic, data}: DetailedDataTab
                     <div>
                         <CardTitle className="text-xl text-balance">Detailed Admission Statistics</CardTitle>
                         <CardDescription className="mt-1.5">
-                            {majorName} • {isDomestic ? "Domestic" : "Non-Domestic"} Students
+                            {majorName} • {isDomestic ? "Domestic" : "All"} Students
                         </CardDescription>
                         <CardDescription className="mt-1.5 text-destructive">
                             Note: Some data may be incomplete, as recent sources no longer provide details available in past years
                         </CardDescription>
                     </div>
                     <Badge variant={isDomestic ? "default" : "secondary"} className="text-xs animate-pulse-glow">
-                        {isDomestic ? "Domestic" : "Non-Domestic"}
+                        {isDomestic ? "Domestic" : "All"} Students
                     </Badge>
                 </div>
             </CardHeader>
@@ -91,7 +91,6 @@ export function DetailedDataTable({majorName, isDomestic, data}: DetailedDataTab
                         <TableBody>
                             {data.map((row, index) => {
                                 const acceptRate = (row.final_admit / (row.final_admit + row.initial_reject)) * 100
-                                console.log(acceptRate)
                                 const prevRow = index > 0 ? data[index - 1] : null
                                 const gpaTrend = prevRow ? row.cutoff - prevRow.cutoff : 0
 
