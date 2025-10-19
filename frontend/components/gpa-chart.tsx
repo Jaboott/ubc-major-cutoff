@@ -6,7 +6,7 @@ import { ChartContainer } from "@/components/ui/chart"
 
 interface GPAChartProps {
     majorName: string
-    data: Array<{ year: number; cutoff: number }>
+    data: any[]
 }
 
 const CustomTooltip = ({ active, payload, label }: any) => {
@@ -24,15 +24,16 @@ const CustomTooltip = ({ active, payload, label }: any) => {
 }
 
 export function GPAChart({ majorName, data }: GPAChartProps) {
-    data.forEach((data: any) => {
-        data.cutoff = Number(data.cutoff)
-    })
+    const dataCopy = data.map(d => ({
+        ...d,
+        cutoff: Number(d.cutoff),
+    }))
 
-    data.sort((a, b) => a.year - b.year)
-    const firstGPA = data[0].cutoff
-    const lastGPA = data[data.length - 1].cutoff
-    const startYear = data[0].year
-    const currYear = data[data.length - 1].year
+    dataCopy.sort((a, b) => a.year - b.year)
+    const firstGPA = dataCopy[0].cutoff
+    const lastGPA = dataCopy[dataCopy.length - 1].cutoff
+    const startYear = dataCopy[0].year
+    const currYear = dataCopy[dataCopy.length - 1].year
 
     return (
         <Card>
@@ -53,7 +54,7 @@ export function GPAChart({ majorName, data }: GPAChartProps) {
                     className="h-[400px] w-full"
                 >
                     <ResponsiveContainer width="100%" height="100%">
-                        <LineChart data={data} margin={{ top: 20, right: 30, left: 0, bottom: 20 }}>
+                        <LineChart data={dataCopy} margin={{ top: 20, right: 30, left: 0, bottom: 20 }}>
                             <CartesianGrid strokeDasharray="3 3" className="stroke-border" />
                             <XAxis
                                 dataKey="year"
@@ -109,9 +110,9 @@ export function GPAChart({ majorName, data }: GPAChartProps) {
                         <p className="text-2xl font-bold text-accent">+{(lastGPA - firstGPA).toFixed(2)}</p>
                     </div>
                     <div className="space-y-1">
-                        <p className="text-sm text-muted-foreground">Average</p>
+                        <p className="text-sm text-muted-foreground">Average Cutoff</p>
                         <p className="text-2xl font-bold text-foreground">
-                            {(data.reduce((sum, d) => sum + d.cutoff, 0) / data.length).toFixed(2)}
+                            {(dataCopy.reduce((sum, d) => sum + d.cutoff, 0) / dataCopy.length).toFixed(2)}
                         </p>
                     </div>
                 </div>
