@@ -9,16 +9,16 @@ import {GPAChart} from "@/components/gpa-chart"
 import {StatsCards} from "@/components/stats-cards"
 import {DetailedDataTable} from "@/components/detailed-data-table"
 
-type MajorData = { name: string, statistics: {} }
+type MajorData = { name: string, statistics: any[] }
 type AvailableMajor = { name: string, uids: number[] }
 
 export default function GPACutoffPage() {
     const [searchQuery, setSearchQuery] = useState("")
-    const [selectedDomestic, setSelectedDomestic] = useState<string>("all")
+    const [selectedDomestic, setSelectedDomestic] = useState<boolean>(true)
     const [selectedMajor, setSelectedMajor] = useState<string>("")
     const [isLoaded, setIsLoaded] = useState(false)
 
-    const [majorData, setMajorData] = useState<MajorData>({name: "", statistics: {}})
+    const [majorData, setMajorData] = useState<MajorData>({name: "", statistics: []})
     const [availableMajors, setAvailableMajors] = useState<AvailableMajor[]>([])
     const [isLoading, setIsLoading] = useState(true)
 
@@ -55,20 +55,53 @@ export default function GPACutoffPage() {
         fetchInitialData()
     }, [])
 
+    useEffect(() => {
+        if (!selectedMajor || selectedMajor === "Average Cutoff") {
+            return
+        }
+
+        async function fetchAdmissionStats() {
+            setIsLoading(true)
+            try {
+                const admissionStats = []
+                const uids = availableMajors.find(m => m.name === selectedMajor)?.uids || []
+
+                for (const id of uids) {
+                    const response = await fetch(`http://127.0.0.1:5000/api/admission/${id}`)
+                    const admission = await response.json()
+                    admissionStats.push(...admission.data)
+                }
+
+                setMajorData({
+                    name: selectedMajor,
+                    statistics: admissionStats
+                })
+
+            } catch (error) {
+                console.error("Failed to fetch initial data:", error)
+            } finally {
+                setIsLoading(false)
+                setIsLoaded(true)
+            }
+        }
+
+        fetchAdmissionStats()
+    }, [selectedMajor])
+
     const filteredMajors = availableMajors.filter((availableMajors) => {
         const name = availableMajors.name
         const statistics: any = majorData.statistics
         if (!statistics) return false
 
-        const matchesSearch = name.toLowerCase().includes(searchQuery.toLowerCase())
-        const matchesDomestic =
-            selectedDomestic === "all" ||
-            (selectedDomestic === "domestic" && statistics.domestic) ||
-            (selectedDomestic === "non-domestic" && !statistics.domestic)
-        return matchesSearch && matchesDomestic
+        return name.toLowerCase().includes(searchQuery.toLowerCase())
     })
 
-    const currentMajorData: any = majorData.statistics
+    const currentMajorData: any = majorData.statistics.filter((data: any) => {
+        if (data.domestic === undefined) {
+            return true
+        }
+        return data.domestic === selectedDomestic
+    })
 
     if (isLoading || !currentMajorData) {
         return (
@@ -102,7 +135,7 @@ export default function GPACutoffPage() {
                 </div>
 
                 {/*<div className={isLoaded ? "" : "opacity-0"}>*/}
-                {/*    <StatsCards majorData={majorData} selectedMajor={selectedMajor} />*/}
+                {/*    <StatsCards majorData={majorData.statistics} selectedMajor={majorData.name} />*/}
                 {/*</div>*/}
 
                 <div className={`mb-8 max-w-4xl mx-auto ${isLoaded ? "animate-fade-in-up stagger-2" : "opacity-0"}`}>
@@ -125,13 +158,14 @@ export default function GPACutoffPage() {
                                     />
                                 </div>
 
-                                <Select value={selectedDomestic} onValueChange={setSelectedDomestic}>
+                                <Select value={selectedDomestic ? "all" : "international"}
+                                        onValueChange={(val) => setSelectedDomestic(val === "all")}>
                                     <SelectTrigger className="w-full md:w-[200px]">
                                         <SelectValue placeholder="Student type"/>
                                     </SelectTrigger>
                                     <SelectContent>
                                         <SelectItem value="all">All Students</SelectItem>
-                                        <SelectItem value="non-domestic">Non-Domestic</SelectItem>
+                                        <SelectItem value="international">International</SelectItem>
                                     </SelectContent>
                                 </Select>
                             </div>
@@ -168,7 +202,7 @@ export default function GPACutoffPage() {
                 <div className={`max-w-5xl mx-auto ${isLoaded ? "animate-fade-in-up stagger-4" : "opacity-0"}`}>
                     <DetailedDataTable
                         majorName={selectedMajor}
-                        isDomestic={currentMajorData.domestic || false}
+                        isDomestic={selectedDomestic}
                         data={currentMajorData}
                     />
                 </div>
