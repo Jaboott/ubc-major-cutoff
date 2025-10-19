@@ -98,7 +98,7 @@ def get_average_cutoff():
     try:
         average_admission_statistics = db.fetchall(
             """
-            select year, avg(min_grade) as cutoff, avg(max_grade) as max_grade, sum(initial_reject) as initial_reject, sum(final_admit) as final_admit
+            select year, avg(min_grade) as min_grade, avg(max_grade) as max_grade, sum(initial_reject) as initial_reject, sum(final_admit) as final_admit
             from admission_statistics
             group by year
             """
@@ -121,7 +121,7 @@ def get_max_cutoff():
     try:
         max_admission_statistics = db.fetchall(
             """
-            select distinct on (year) year, uid, min_grade as cutoff, max_grade
+            select distinct on (year) year, uid, min_grade, max_grade
             from admission_statistics
             where min_grade is not null
             order by year, min_grade desc;
