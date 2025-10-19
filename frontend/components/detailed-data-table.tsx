@@ -10,8 +10,9 @@ interface DetailedDataTableProps {
 }
 
 export function DetailedDataTable({majorName, isDomestic, data}: DetailedDataTableProps) {
+    console.log(data)
     data.forEach((data: any) => {
-        data.cutoff = Number(data.cutoff)
+        data.min_grade = Number(data.min_grade)
         data.max_grade = Number(data.max_grade)
         data.initial_reject = Number(data.initial_reject)
         data.final_admit = Number(data.final_admit)
@@ -21,7 +22,7 @@ export function DetailedDataTable({majorName, isDomestic, data}: DetailedDataTab
     // Calculate totals and averages
     const totalInitialReject = data.reduce((sum, d) => sum + d.initial_reject, 0)
     const totalFinalAdmit = data.reduce((sum, d) => sum + d.final_admit, 0)
-    const avgMinGrade = data.reduce((sum, d) => sum + d.cutoff, 0) / data.length
+    const avgMinGrade = data.reduce((sum, d) => sum + d.min_grade, 0) / data.length
 
     return (
         <Card className="hover-lift transition-all duration-300">
@@ -30,14 +31,14 @@ export function DetailedDataTable({majorName, isDomestic, data}: DetailedDataTab
                     <div>
                         <CardTitle className="text-xl text-balance">Detailed Admission Statistics</CardTitle>
                         <CardDescription className="mt-1.5">
-                            {majorName} • {isDomestic ? "Domestic" : "All"} Students
+                            {majorName} • {isDomestic ? "All" : "International"} Students
                         </CardDescription>
                         <CardDescription className="mt-1.5 text-destructive">
                             Note: Some data may be incomplete, as recent sources no longer provide details available in past years
                         </CardDescription>
                     </div>
                     <Badge variant={isDomestic ? "default" : "secondary"} className="text-xs animate-pulse-glow">
-                        {isDomestic ? "Domestic" : "All"} Students
+                        {isDomestic ? "All" : "International"} Students
                     </Badge>
                 </div>
             </CardHeader>
@@ -92,7 +93,7 @@ export function DetailedDataTable({majorName, isDomestic, data}: DetailedDataTab
                             {data.map((row, index) => {
                                 const acceptRate = (row.final_admit / (row.final_admit + row.initial_reject)) * 100
                                 const prevRow = index > 0 ? data[index - 1] : null
-                                const gpaTrend = prevRow ? row.cutoff - prevRow.cutoff : 0
+                                const gpaTrend = prevRow ? row.min_grade - prevRow.min_grade : 0
 
                                 return (
                                     <TableRow key={row.year}
@@ -100,7 +101,7 @@ export function DetailedDataTable({majorName, isDomestic, data}: DetailedDataTab
                                         <TableCell className="font-medium">{row.year}</TableCell>
                                         <TableCell>
                                             <div className="flex items-center gap-2">
-                                                <span className="font-semibold">{row.cutoff.toFixed(2)}</span>
+                                                <span className="font-semibold">{row.min_grade.toFixed(2)}</span>
                                                 {gpaTrend !== 0 && (
                                                     <span
                                                         className={`text-xs flex items-center gap-0.5 ${
@@ -149,7 +150,7 @@ export function DetailedDataTable({majorName, isDomestic, data}: DetailedDataTab
                         <li>
                             Major cutoff increased by{" "}
                             <span className="font-semibold text-foreground">
-                {(data[data.length - 1].cutoff - data[0].cutoff).toFixed(2)}
+                {(data[data.length - 1].min_grade - data[0].min_grade).toFixed(2)}
               </span>{" "}
                             percent from {data[0].year} to {data[data.length - 1].year}
                         </li>
@@ -165,11 +166,11 @@ export function DetailedDataTable({majorName, isDomestic, data}: DetailedDataTab
                         <li>
                             Minimum cutoff ranges from{" "}
                             <span className="font-semibold text-foreground">
-                {Math.min(...data.map((d) => d.cutoff)).toFixed(2)}
+                {Math.min(...data.map((d) => d.min_grade)).toFixed(2)}
               </span>{" "}
                             to{" "}
                             <span className="font-semibold text-foreground">
-                {Math.max(...data.map((d) => d.cutoff)).toFixed(2)}
+                {Math.max(...data.map((d) => d.min_grade)).toFixed(2)}
               </span>
                         </li>
                     </ul>

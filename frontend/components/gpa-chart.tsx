@@ -26,12 +26,12 @@ const CustomTooltip = ({ active, payload, label }: any) => {
 export function GPAChart({ majorName, data }: GPAChartProps) {
     const dataCopy = data.map(d => ({
         ...d,
-        cutoff: Number(d.cutoff),
+        min_grade: Number(d.min_grade),
     }))
 
     dataCopy.sort((a, b) => a.year - b.year)
-    const firstGPA = dataCopy[0].cutoff
-    const lastGPA = dataCopy[dataCopy.length - 1].cutoff
+    const firstGPA = dataCopy[0].min_grade
+    const lastGPA = dataCopy[dataCopy.length - 1].min_grade
     const startYear = dataCopy[0].year
     const currYear = dataCopy[dataCopy.length - 1].year
 
@@ -75,7 +75,7 @@ export function GPAChart({ majorName, data }: GPAChartProps) {
                             />
                             <Line
                                 type="monotone"
-                                dataKey="cutoff"
+                                dataKey="min_grade"
                                 stroke="hsl(var(--chart-1))"
                                 strokeWidth={3}
                                 dot={{
@@ -112,7 +112,7 @@ export function GPAChart({ majorName, data }: GPAChartProps) {
                     <div className="space-y-1">
                         <p className="text-sm text-muted-foreground">Average Cutoff</p>
                         <p className="text-2xl font-bold text-foreground">
-                            {(dataCopy.reduce((sum, d) => sum + d.cutoff, 0) / dataCopy.length).toFixed(2)}
+                            {(dataCopy.reduce((sum, d) => sum + d.min_grade, 0) / dataCopy.length).toFixed(2)}
                         </p>
                     </div>
                 </div>
