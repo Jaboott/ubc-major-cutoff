@@ -16,6 +16,8 @@ export function DetailedDataTable({majorName, isDomestic, data}: DetailedDataTab
         data.initial_reject = Number(data.initial_reject)
         data.final_admit = Number(data.final_admit)
     })
+
+    data.sort((a, b) => a.year - b.year)
     // Calculate totals and averages
     const totalInitialReject = data.reduce((sum, d) => sum + d.initial_reject, 0)
     const totalFinalAdmit = data.reduce((sum, d) => sum + d.final_admit, 0)
@@ -88,7 +90,7 @@ export function DetailedDataTable({majorName, isDomestic, data}: DetailedDataTab
                         </TableHeader>
                         <TableBody>
                             {data.map((row, index) => {
-                                const acceptRate = (row.final_admits / (row.final_admits + row.initial_rejects)) * 100
+                                const acceptRate = (row.final_admit / (row.final_admit + row.initial_reject)) * 100
                                 console.log(acceptRate)
                                 const prevRow = index > 0 ? data[index - 1] : null
                                 const gpaTrend = prevRow ? row.cutoff - prevRow.cutoff : 0
