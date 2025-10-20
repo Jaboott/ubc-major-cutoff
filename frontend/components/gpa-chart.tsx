@@ -15,7 +15,7 @@ const CustomTooltip = ({ active, payload, label }: any) => {
             <div className="rounded-lg border bg-background p-3 shadow-lg">
                 <p className="text-sm font-medium text-foreground mb-1">Year: {label}</p>
                 <p className="text-sm text-muted-foreground">
-                    GPA Cutoff: <span className="font-semibold text-foreground">{payload[0].value.toFixed(2)}</span>
+                    Cutoff: <span className="font-semibold text-foreground">{payload[0].value.toFixed(2)}</span>
                 </p>
             </div>
         )
@@ -40,7 +40,7 @@ export function GPAChart({ majorName, data }: GPAChartProps) {
             <CardHeader>
                 <div>
                     <CardTitle className="text-2xl text-balance">{majorName}</CardTitle>
-                    <CardDescription className="mt-1.5">GPA Cutoff Trends ({startYear} - {currYear})</CardDescription>
+                    <CardDescription className="mt-1.5">Cutoff Trends ({startYear} - {currYear})</CardDescription>
                 </div>
             </CardHeader>
             <CardContent>

@@ -10,7 +10,6 @@ interface DetailedDataTableProps {
 }
 
 export function DetailedDataTable({majorName, isDomestic, data}: DetailedDataTableProps) {
-    console.log(data)
     data.forEach((data: any) => {
         data.min_grade = Number(data.min_grade)
         data.max_grade = Number(data.max_grade)
