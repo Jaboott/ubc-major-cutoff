@@ -9,7 +9,7 @@ import {GPAChart} from "@/components/gpa-chart"
 import {StatsCards} from "@/components/stats-cards"
 import {DetailedDataTable} from "@/components/detailed-data-table"
 
-type MajorData = { name: string, statistics: any[] }
+export type MajorData = { name: string, statistics: any[] }
 type AvailableMajor = { name: string, uids: number[] }
 
 export default function GPACutoffPage() {
@@ -20,6 +20,8 @@ export default function GPACutoffPage() {
 
     const [majorData, setMajorData] = useState<MajorData>({name: "", statistics: []})
     const [availableMajors, setAvailableMajors] = useState<AvailableMajor[]>([])
+    const [averageData, setAverageData] = useState<MajorData>({name: "", statistics: []})
+    const [maxCutoff, setMaxCutoff] = useState<{name: string, stats: {}}>({name: "", stats: {}})
     const [isLoading, setIsLoading] = useState(true)
 
     useEffect(() => {
@@ -42,8 +44,26 @@ export default function GPACutoffPage() {
 
                 const averageCutoffResponse = await fetch("http://127.0.0.1:5000/api/average-cutoffs")
                 const averageCutoffJson = await averageCutoffResponse.json()
-                setMajorData({name: "average", statistics: averageCutoffJson.data})
-                setSelectedMajor("Average Cutoff")
+                setMajorData({name: "All Majors (average)", statistics: averageCutoffJson.data})
+                setAverageData({name: "All Majors (average)", statistics: averageCutoffJson.data})
+
+                const maxCutoffResponse = await fetch("http://127.0.0.1:5000/api/max-admissions")
+                const maxCutoffJson = await maxCutoffResponse.json()
+                const latestMaxCutoff = maxCutoffJson.data.reduce((max: any, major: any) => {
+                    return major.year > max.year ? major : max
+                })
+
+                let latestMaxCutoffName = ""
+
+                for (let [name, uids] of majorsMap) {
+                    if (uids.includes(latestMaxCutoff.uid)) {
+                        latestMaxCutoffName = name
+                        break
+                    }
+                }
+
+                setMaxCutoff({name: latestMaxCutoffName, stats: latestMaxCutoff})
+                setSelectedMajor("All Majors (average)")
             } catch (error) {
                 console.error("Failed to fetch initial data:", error)
             } finally {
@@ -56,7 +76,7 @@ export default function GPACutoffPage() {
     }, [])
 
     useEffect(() => {
-        if (!selectedMajor || selectedMajor === "Average Cutoff") {
+        if (!selectedMajor || selectedMajor === "All Majors (average)") {
             return
         }
 
@@ -127,16 +147,16 @@ export default function GPACutoffPage() {
             <div className="container mx-auto px-4 py-8 md:py-12">
                 <div className={`mb-8 text-center relative ${isLoaded ? "animate-fade-in-up" : "opacity-0"}`}>
                     <h1 className="text-4xl font-bold tracking-tight text-foreground mb-3 text-balance">
-                        Major GPA Cutoff Analysis
+                        UBC Science Major Cutoff
                     </h1>
                     <p className="text-lg text-muted-foreground text-balance">
-                        Explore admission GPA requirements across different majors and years
+                        Explore admission requirements across different science specializations and years
                     </p>
                 </div>
 
-                {/*<div className={isLoaded ? "" : "opacity-0"}>*/}
-                {/*    <StatsCards majorData={majorData.statistics} selectedMajor={majorData.name} />*/}
-                {/*</div>*/}
+                <div className={isLoaded ? "" : "opacity-0"}>
+                    <StatsCards majorData={majorData} availableMajors={availableMajors} averageData={averageData} maxCutoff={maxCutoff}/>
+                </div>
 
                 <div className={`mb-8 max-w-4xl mx-auto ${isLoaded ? "animate-fade-in-up stagger-2" : "opacity-0"}`}>
                     <Card>

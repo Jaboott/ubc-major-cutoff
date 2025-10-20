@@ -3,13 +3,17 @@
 import { Card, CardContent } from "@/components/ui/card"
 import { TrendingUp, Users, Award, BarChart } from "lucide-react"
 import { useEffect, useState } from "react"
+import {MajorData} from "@/app/page";
 
 interface StatsCardsProps {
-    majorData: Record<string, { type: string; data: Array<{ year: string; gpa: number }> }>
-    selectedMajor: string
+    majorData: MajorData
+    availableMajors: any[]
+    averageData: MajorData
+    maxCutoff: {name: string, stats: any}
 }
 
 function AnimatedCounter({ value, decimals = 0 }: { value: number; decimals?: number }) {
+    value = Number(value)
     const [count, setCount] = useState(0)
 
     useEffect(() => {
@@ -34,39 +38,22 @@ function AnimatedCounter({ value, decimals = 0 }: { value: number; decimals?: nu
     return <span>{count.toFixed(decimals)}</span>
 }
 
-export function StatsCards({ majorData, selectedMajor }: StatsCardsProps) {
+export function StatsCards({ majorData, availableMajors, averageData, maxCutoff }: StatsCardsProps) {
+    const sortedMajorStats = majorData.statistics.sort((a, b) => a.year - b.year)
+    const sortedAverageData = averageData.statistics.sort((a, b) => a.year - b.year)
+
     // Calculate overall statistics
-    const allMajors = Object.keys(majorData)
-    const currentYear = "2024"
+    const allMajors = Object.keys(availableMajors)
 
-    // Get highest GPA major
-    const highestGPAMajor = allMajors.reduce((highest, major) => {
-        const currentGPA = majorData[major].data.find((d) => d.year === currentYear)?.gpa || 0
-        const highestGPA = majorData[highest].data.find((d) => d.year === currentYear)?.gpa || 0
-        return currentGPA > highestGPA ? major : highest
-    }, allMajors[0])
+    // Get highest Cutoff major
+    const highestCutoffMajor = maxCutoff.name
+    const highestCutoff = maxCutoff.stats.min_grade
 
-    const highestGPA = majorData[highestGPAMajor].data.find((d) => d.year === currentYear)?.gpa || 0
-
-    // Calculate average GPA across all majors
-    const averageGPA =
-        allMajors.reduce((sum, major) => {
-            const gpa = majorData[major].data.find((d) => d.year === currentYear)?.gpa || 0
-            return sum + gpa
-        }, 0) / allMajors.length
+    // Calculate average Cutoff across all majors
+    const averageCutoff = sortedAverageData[sortedAverageData.length - 1].min_grade
 
     // Calculate average trend
-    const averageTrend =
-        allMajors.reduce((sum, major) => {
-            const data = majorData[major].data
-            const firstGPA = data[0].cutoff
-            const lastGPA = data[data.length - 1].cutoff
-            return sum + ((lastGPA - firstGPA) / firstGPA) * 100
-        }, 0) / allMajors.length
-
-    // Get current major stats
-    const currentMajorData = majorData[selectedMajor]
-    const currentMajorGPA = currentMajorData.data.find((d) => d.year === currentYear)?.gpa || 0
+    const averageTrend = sortedAverageData[sortedAverageData.length - 1].min_grade - sortedAverageData[sortedAverageData.length - 2].min_grade
 
     return (
         <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-4 mb-8">
@@ -74,11 +61,11 @@ export function StatsCards({ majorData, selectedMajor }: StatsCardsProps) {
                 <CardContent className="pt-6">
                     <div className="flex items-center justify-between">
                         <div className="space-y-1">
-                            <p className="text-sm text-muted-foreground">Selected Major</p>
+                            <p className="text-sm text-muted-foreground">Selected Major ({sortedMajorStats[sortedMajorStats.length - 1].year})</p>
                             <p className="text-2xl font-bold text-foreground">
-                                <AnimatedCounter value={currentMajorGPA} decimals={2} />
+                                <AnimatedCounter value={sortedMajorStats[sortedMajorStats.length-1].min_grade} decimals={2} />
                             </p>
-                            <p className="text-xs text-muted-foreground truncate">{selectedMajor}</p>
+                            <p className="text-xs text-muted-foreground truncate">{majorData.name}</p>
                         </div>
                         <div className="h-12 w-12 rounded-full bg-primary/10 flex items-center justify-center transition-all duration-300 group-hover:scale-110 group-hover:bg-primary/20">
                             <Award className="h-6 w-6 text-primary transition-transform duration-300 group-hover:rotate-12" />
@@ -91,11 +78,11 @@ export function StatsCards({ majorData, selectedMajor }: StatsCardsProps) {
                 <CardContent className="pt-6">
                     <div className="flex items-center justify-between">
                         <div className="space-y-1">
-                            <p className="text-sm text-muted-foreground">Highest Cutoff</p>
+                            <p className="text-sm text-muted-foreground">Highest Cutoff ({maxCutoff.stats.year})</p>
                             <p className="text-2xl font-bold text-foreground">
-                                <AnimatedCounter value={highestGPA} decimals={2} />
+                                <AnimatedCounter value={highestCutoff} decimals={2} />
                             </p>
-                            <p className="text-xs text-muted-foreground truncate">{highestGPAMajor}</p>
+                            <p className="text-xs text-muted-foreground truncate">{highestCutoffMajor}</p>
                         </div>
                         <div className="h-12 w-12 rounded-full bg-accent/10 flex items-center justify-center transition-all duration-300 group-hover:scale-110 group-hover:bg-accent/20">
                             <TrendingUp className="h-6 w-6 text-accent transition-transform duration-300 group-hover:translate-y-[-2px]" />
@@ -108,9 +95,9 @@ export function StatsCards({ majorData, selectedMajor }: StatsCardsProps) {
                 <CardContent className="pt-6">
                     <div className="flex items-center justify-between">
                         <div className="space-y-1">
-                            <p className="text-sm text-muted-foreground">Average GPA</p>
+                            <p className="text-sm text-muted-foreground">Average Cutoff ({sortedAverageData[sortedAverageData.length - 1].year})</p>
                             <p className="text-2xl font-bold text-foreground">
-                                <AnimatedCounter value={averageGPA} decimals={2} />
+                                <AnimatedCounter value={averageCutoff} decimals={2} />
                             </p>
                             <p className="text-xs text-muted-foreground">Across all majors</p>
                         </div>
@@ -130,7 +117,7 @@ export function StatsCards({ majorData, selectedMajor }: StatsCardsProps) {
                                 <AnimatedCounter value={allMajors.length} decimals={0} />
                             </p>
                             <p className="text-xs text-accent">
-                                +<AnimatedCounter value={averageTrend} decimals={1} />% avg trend
+                                Cutoff {averageTrend >= 0 ? "+" : ""}<AnimatedCounter value={averageTrend} decimals={1} />% from last year
                             </p>
                         </div>
                         <div className="h-12 w-12 rounded-full bg-chart-3/10 flex items-center justify-center transition-all duration-300 group-hover:scale-110 group-hover:bg-chart-3/20">
