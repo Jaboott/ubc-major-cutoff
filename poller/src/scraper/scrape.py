@@ -129,9 +129,9 @@ def scrape():
     soup = _get_soup()
     tables = pd.read_html(StringIO(str(soup)), flavor="bs4")
 
+    # the information from table 1 is repeated within table 2
     dfs = [
         _parse_basic(tables[0]),
-        _parse_complex(tables[1]),
         _parse_complex(tables[2]),
     ]
 
