@@ -65,6 +65,9 @@ def _parse_complex(df):
     for first, second in zip(df.iloc[0], df.iloc[1]):
         if first == second:
             columns.append(first)
+        # starting 2025, website no longer splits into domestic and international
+        elif pd.isna(second):
+            columns.append(f"{first}_DOM")
         else:
             columns.append(f"{first}_{second}")
 
@@ -147,4 +150,4 @@ def scrape():
 if __name__ == '__main__':
     data = scrape()
     for d in data:
-        print(d.id)
+        print(f"{d.name} - {d.type} - {d.year}")
