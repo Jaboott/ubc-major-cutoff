@@ -9,11 +9,10 @@ load_dotenv()
 app = Flask(__name__)
 CORS(
     app,
-    supports_credentials=True,
     origins=[
         "http://localhost:3000",
-        "https://ubc-major-cutoff.vercel.app/",
-        "https://ubcmajorcutoff.jaboott.com/",
+        "https://ubc-major-cutoff.vercel.app",
+        "https://ubcmajorcutoff.jaboott.com",
     ],
 )
 
