@@ -11,6 +11,7 @@ import {DetailedDataTable} from "@/components/detailed-data-table"
 
 export type MajorData = { name: string, statistics: any[] }
 type AvailableMajor = { name: string, uids: number[] }
+const URL= "https://ubc-major-cutoff.onrender.com"
 
 export default function GPACutoffPage() {
     const [searchQuery, setSearchQuery] = useState("")
@@ -28,7 +29,7 @@ export default function GPACutoffPage() {
         async function fetchInitialData() {
             setIsLoading(true)
             try {
-                const majorsResponse = await fetch("http://127.0.0.1:5000/api/majors")
+                const majorsResponse = await fetch("https://ubc-major-cutoff.onrender.com/api/majors")
                 const majorsJson = await majorsResponse.json()
                 const majorsMap = new Map()
 
@@ -42,12 +43,12 @@ export default function GPACutoffPage() {
                     return {name: key, uids: majorsMap.get(key)}
                 }))
 
-                const averageCutoffResponse = await fetch("http://127.0.0.1:5000/api/average-cutoffs")
+                const averageCutoffResponse = await fetch("https://ubc-major-cutoff.onrender.com/api/average-cutoffs")
                 const averageCutoffJson = await averageCutoffResponse.json()
                 setMajorData({name: "All Majors (average)", statistics: averageCutoffJson.data})
                 setAverageData({name: "All Majors (average)", statistics: averageCutoffJson.data})
 
-                const maxCutoffResponse = await fetch("http://127.0.0.1:5000/api/max-admissions")
+                const maxCutoffResponse = await fetch("https://ubc-major-cutoff.onrender.com/api/max-admissions")
                 const maxCutoffJson = await maxCutoffResponse.json()
                 const latestMaxCutoff = maxCutoffJson.data.reduce((max: any, major: any) => {
                     return major.year > max.year ? major : max
@@ -87,7 +88,7 @@ export default function GPACutoffPage() {
                 const uids = availableMajors.find(m => m.name === selectedMajor)?.uids || []
 
                 for (const id of uids) {
-                    const response = await fetch(`http://127.0.0.1:5000/api/admission/${id}`)
+                    const response = await fetch(`https://ubc-major-cutoff.onrender.com/api/admission/${id}`)
                     const admission = await response.json()
                     admissionStats.push(...admission.data)
                 }
