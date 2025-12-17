@@ -29,7 +29,7 @@ export default function GPACutoffPage() {
         async function fetchInitialData() {
             setIsLoading(true)
             try {
-                const majorsResponse = await fetch("https://ubc-major-cutoff.onrender.com/api/majors")
+                const majorsResponse = await fetch(`${URL}/api/majors`)
                 const majorsJson = await majorsResponse.json()
                 const majorsMap = new Map()
 
@@ -43,12 +43,12 @@ export default function GPACutoffPage() {
                     return {name: key, uids: majorsMap.get(key)}
                 }))
 
-                const averageCutoffResponse = await fetch("https://ubc-major-cutoff.onrender.com/api/average-cutoffs")
+                const averageCutoffResponse = await fetch(`${URL}/api/average-cutoffs`)
                 const averageCutoffJson = await averageCutoffResponse.json()
                 setMajorData({name: "All Majors (average)", statistics: averageCutoffJson.data})
                 setAverageData({name: "All Majors (average)", statistics: averageCutoffJson.data})
 
-                const maxCutoffResponse = await fetch("https://ubc-major-cutoff.onrender.com/api/max-admissions")
+                const maxCutoffResponse = await fetch(`${URL}/api/max-admissions`)
                 const maxCutoffJson = await maxCutoffResponse.json()
                 const latestMaxCutoff = maxCutoffJson.data.reduce((max: any, major: any) => {
                     return major.year > max.year ? major : max
@@ -88,7 +88,7 @@ export default function GPACutoffPage() {
                 const uids = availableMajors.find(m => m.name === selectedMajor)?.uids || []
 
                 for (const id of uids) {
-                    const response = await fetch(`https://ubc-major-cutoff.onrender.com/api/admission/${id}`)
+                    const response = await fetch(`${URL}/api/admission/${id}`)
                     const admission = await response.json()
                     admissionStats.push(...admission.data)
                 }
@@ -148,7 +148,7 @@ export default function GPACutoffPage() {
             <div className="container mx-auto px-4 py-8 md:py-12">
                 <div className={`mb-8 text-center relative ${isLoaded ? "animate-fade-in-up" : "opacity-0"}`}>
                     <h1 className="text-4xl font-bold tracking-tight text-foreground mb-3 text-balance">
-                        UBC Science Major Cutoff
+                        <a href="/">UBC Science Major Cutoff</a>
                     </h1>
                     <p className="text-lg text-muted-foreground text-balance">
                         Explore admission requirements across different science specializations and years
